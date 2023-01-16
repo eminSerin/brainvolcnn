@@ -18,6 +18,10 @@ def default_parser():
     )
 
     parser.add_argument(
+        "--ver", type=str, help="Additional string for the name of the file"
+    )
+
+    parser.add_argument(
         "--subj_list",
         type=str,
         help="File containing the subject ID list, one subject ID on each line",
@@ -171,6 +175,11 @@ def default_parser():
     parser.add_argument("--checkpoint_file", type=str, help="Path to checkpoint file")
 
     args = parser.parse_args()
+
+    if args.mask is not None:
+        args.unmask = True
+    else:
+        args.unmask = False
 
     # Loss
     if args.loss == "mse":

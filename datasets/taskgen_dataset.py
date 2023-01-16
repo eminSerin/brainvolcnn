@@ -7,6 +7,46 @@ from torch.utils.data import Dataset
 from .utils import _unmask_timeseries
 
 
+##TODO: Add docstring!
+def load_timeseries(
+    rest_file,
+    task_file=None,
+    device="cpu",
+    unmask=False,
+    mask=None,
+    crop=False,
+):
+    # Rest
+    if not op.exists(rest_file):
+        raise FileExistsError(f"{rest_file} does not exist!")
+    # Task
+    if not op.exists(task_file):
+        raise FileExistsError(f"{task_file} does not exist!")
+
+    if unmask:
+        rest_img = (
+            _unmask_timeseries(np.load(rest_file).T, mask, crop)
+            .type(torch.float)
+            .to(device)
+        )
+        if task_file is not None:
+            task_img = (
+                torch.from_numpy(_unmask_timeseries(np.load(task_file), mask, crop))
+                .type(torch.float)
+                .to(device)
+            )
+            return rest_img, task_img
+        return rest_img
+    else:
+        rest_img = torch.from_numpy(np.load(rest_file).T).type(torch.float).to(device)
+        if task_file is not None:
+            task_img = (
+                torch.from_numpy(np.load(task_file).T).type(torch.float).to(device)
+            )
+            return rest_img, task_img
+        return rest_img
+
+
 class TaskGenDataset(Dataset):
     """Dataset class for task generation experiment.
 
@@ -25,7 +65,7 @@ class TaskGenDataset(Dataset):
     device : str, optional
         Device to load data to, by default "cpu"
     unmask : bool, optional
-        Whether or not to unmask timeseries, by default None.
+        Whether or not to unmask timeseries, by default False.
     mask : nib.Nifti1Image, optional
         Mask array, by default None
     crop : bool, optional
@@ -41,10 +81,10 @@ class TaskGenDataset(Dataset):
         self,
         subj_ids,
         rest_dir,
-        task_dir,
+        task_dir=None,
         num_samples=8,
         device="cpu",
-        unmask=None,
+        unmask=False,
         mask=None,
         crop=False,
     ) -> None:
@@ -58,35 +98,23 @@ class TaskGenDataset(Dataset):
         self.mask = mask
         self.crop = crop
 
-        if (unmask is not None) and (mask is None):
+        if unmask and (mask is None):
             raise ValueError("Mask must be provided to unmask timeseries!")
 
     def __getitem__(self, idx):
         subj = self.subj_ids[idx]
         sample_id = np.random.randint(0, self.num_samples)
+
         # Rest
         rest_file = op.join(self.rest_dir, f"{subj}_sample{sample_id}_rsfc.npy")
-        if not op.exists(rest_file):
-            raise FileExistsError(f"{rest_file} does not exist!")
-        # Task
-        task_file = op.join(self.task_dir, f"{subj}_joint_MNI_task_contrasts.npy")
-        if not op.exists(task_file):
-            raise FileExistsError(f"{task_file} does not exist!")
 
-        if self.unmask is not None:
-            return torch.from_numpy(
-                _unmask_timeseries(np.load(rest_file).T, self.mask, self.crop)
-            ).type(torch.float).to(self.device), torch.from_numpy(
-                _unmask_timeseries(np.load(task_file), self.mask, self.crop)
-            ).type(
-                torch.float
-            ).to(
-                self.device
-            )
-        else:
-            return torch.from_numpy(np.load(rest_file).T).type(torch.float).to(
-                self.device
-            ), torch.from_numpy(np.load(task_file).T).type(torch.float).to(self.device)
+        # Task
+        if self.task_dir is not None:
+            task_file = op.join(self.task_dir, f"{subj}_joint_MNI_task_contrasts.npy")
+
+        return load_timeseries(
+            rest_file, task_file, self.device, self.unmask, self.mask, self.crop
+        )
 
     def __len__(self):
         return len(self.subj_ids)
@@ -99,10 +127,10 @@ class TaskGenDatasetLinear(TaskGenDataset):
         self,
         subj_ids,
         rest_dir,
-        task_dir,
+        task_dir=None,
         num_samples=8,
         device="cpu",
-        unmask=None,
+        unmask=False,
         mask=None,
         crop=False,
     ) -> None:
@@ -111,5 +139,9 @@ class TaskGenDatasetLinear(TaskGenDataset):
         )
 
     def __getitem__(self, idx):
-        rest_data, task_data = super().__getitem__(idx)
-        return rest_data.flatten(1), task_data.flatten(1)
+        if self.task_dir is not None:
+            rest_data, task_data = super().__getitem__(idx)
+            return rest_data.flatten(1), task_data.flatten(1)
+        else:
+            rest_data = super().__getitem__(idx)
+            return rest_data.flatten(1)

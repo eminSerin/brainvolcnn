@@ -93,6 +93,9 @@ class BaseModel(_BaseLayer):
         self.log("val_r2", r2_score(y_hat.flatten(), y.flatten()))
         return val_loss
 
+    def predict_step(self, batch, batch_idx, dataloader_idx=None):
+        return self(batch)
+
     # def test_step(self, batch, batch_idx):
     #     x, y = batch
     #     y_hat = self(x)
