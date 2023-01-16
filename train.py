@@ -19,11 +19,10 @@ def train():
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    ##TODO: Uncomment this
-    # if op.exists(args.working_dir):
-    #     raise FileExistsError(f"{args.working_dir} already exists!")
-    # else:
-    #     op.makedirs(args.working_dir)
+    if op.exists(args.working_dir):
+        raise FileExistsError(f"{args.working_dir} already exists!")
+    else:
+        op.makedirs(args.working_dir)
 
     """Load Data"""
     subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
@@ -68,6 +67,11 @@ def train():
         up_mode=args.upsampling_mode,
         loss_fn=args.loss,
     )
+    # Loads model from checkpoint if specified
+    if args.checkpoint_file is not None:
+        if not op.exists(args.checkpoint_file):
+            raise FileNotFoundError(f"{args.checkpoint_file} does not exist!")
+        model.load_from_checkpoint(args.checkpoint_file, loss_fn=args.loss)
 
     """Checkpoint"""
     checkpoint_callback_loss = ModelCheckpoint(
