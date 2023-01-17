@@ -54,8 +54,15 @@ def train():
         device=args.device,
     )
 
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(
+        train_set,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers,
+    )
+    val_loader = DataLoader(
+        val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
+    )
 
     """Init Model"""
     model = args.architecture(

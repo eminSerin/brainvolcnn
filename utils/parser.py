@@ -118,6 +118,10 @@ def default_parser():
     )
 
     parser.add_argument(
+        "--n_workers", type=int, default=4, help="Number of workers for dataloader"
+    )
+
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
