@@ -25,7 +25,7 @@ def load_timeseries(
 
     if unmask:
         rest_img = (
-            _unmask_timeseries(np.load(rest_file).T, mask, crop)
+            torch.from_numpy(_unmask_timeseries(np.load(rest_file).T, mask, crop))
             .type(torch.float)
             .to(device)
         )
