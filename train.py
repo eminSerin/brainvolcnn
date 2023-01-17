@@ -1,3 +1,4 @@
+import os
 import os.path as op
 
 import numpy as np
@@ -22,7 +23,7 @@ def train():
     if op.exists(args.working_dir):
         raise FileExistsError(f"{args.working_dir} already exists!")
     else:
-        op.makedirs(args.working_dir)
+        os.makedirs(args.working_dir)
 
     """Load Data"""
     subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
