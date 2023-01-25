@@ -65,3 +65,7 @@ def predict():
                     print(f"Skipping {id} because prediction already exists!")
 
     print("Finished predicting!")
+
+
+if __name__ == "__main__":
+    predict()
