@@ -151,7 +151,7 @@ class VNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=5,
+        max_level=4,
         fdim=64,
         n_conv=None,
         kernel_size=5,
@@ -242,13 +242,13 @@ class VNet(BaseModel):
             Segmented images of shape (batch_size, out_chans, *3D spatial_dims)
         """
         skip_connections = []
-        out = self.input_layer(x)
-        skip_connections.append(out)
+        x = self.input_layer(x)
+        skip_connections.append(x)
         for down in self.downs:
-            out = down(out)
-            skip_connections.append(out)
+            x = down(x)
+            skip_connections.append(x)
         skip_connections.pop(-1)
         skip_connections = skip_connections[::-1]
         for up, skip in zip(self.ups, skip_connections):
-            out = up(out, skip)
-        return self.out_layer(out)
+            x = up(x, skip)
+        return self.out_layer(x)

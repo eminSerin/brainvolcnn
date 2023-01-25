@@ -39,7 +39,7 @@ class UNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=5,
+        max_level=4,
         fdim=64,
         n_conv=3,
         kernel_size=3,

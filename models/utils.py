@@ -118,9 +118,6 @@ class _nConv(_BaseLayer):
         return self.conv(x)
 
 
-
-
-
 def _skip_concat(x, skip, mode="trilinear"):
     """Concatenates the skip connection
 
@@ -197,7 +194,7 @@ def _interpolate(X, size, mode="trilinear", align_corners=None):
     return F.interpolate(X, size=size, mode=mode, align_corners=align_corners)
 
 
-def _activation_fn(activation="relu", n_channels=None):
+def _activation_fn(activation="relu", n_channels=None, in_place=True):
     """It returns the activation function.
 
     Parameters
@@ -212,17 +209,21 @@ def _activation_fn(activation="relu", n_channels=None):
         function, by default None. This is only
         for PReLU activation function. If None,
         it is set to 1.
+    in_place : bool, optional
+        Whether to perform the operation in-place,
+        by default True. It only works for "relu",
+        leakyrelu", and "elu".
     Returns
     -------
     nn.Module
         Activation function.
     """
     if activation == "relu":
-        return nn.ReLU(inplace=True)
+        return nn.ReLU(inplace=in_place)
     elif activation == "leakyrelu":
-        return nn.LeakyReLU(inplace=True)
+        return nn.LeakyReLU(inplace=in_place)
     elif activation == "elu":
-        return nn.ELU(inplace=True)
+        return nn.ELU(inplace=in_place)
     elif activation == "tanh":
         return nn.Tanh()
     elif activation == "sigmoid":

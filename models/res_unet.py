@@ -182,11 +182,10 @@ class _InputLayer(_BaseLayer):
         return _skip_add(x, skip, mode=self.up_mode)
 
 
-## TODO: Add docstring!
 class ResUNet(BaseModel):
     """ResUNet architecture.
 
-    Deep-learning based segmentation model for 3D medical images, combinging
+    Deep-learning based segmentation model for 3D medical images, combining
     deep residual networks and U-net architecture [1].
 
     Parameters
@@ -203,7 +202,7 @@ class ResUNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=4,
+        max_level=5,
         fdim=64,
         n_conv=2,
         kernel_size=3,
