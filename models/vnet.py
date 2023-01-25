@@ -56,8 +56,8 @@ class Down(_BaseLayer):
             activation=self.activation,
         )
         self.conv = _nConv(
-            in_channels=self.out_chans,
-            out_channels=self.out_chans,
+            in_chans=self.out_chans,
+            out_chans=self.out_chans,
             n_conv=self.n_conv,
             activation=self.activation,
             kernel_size=5,
@@ -82,8 +82,8 @@ class Up(_BaseLayer):
             self.activation, self.out_chans // 2
         )
         self.conv = _nConv(
-            in_channels=self.out_chans,
-            out_channels=self.out_chans,
+            in_chans=self.out_chans,
+            out_chans=self.out_chans,
             n_conv=self.n_conv,
             activation=self.activation,
             kernel_size=self.kernel_size,
