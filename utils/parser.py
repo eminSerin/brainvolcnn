@@ -187,7 +187,7 @@ def default_parser():
 
     # Loss
     if args.loss == "mse":
-        args.loss == torch.nn.MSELoss
+        args.loss = torch.nn.MSELoss()
     elif args.loss == "rc":
         args.loss = RCLossAnneal(
             init_within_margin=args.init_within_subj_margin,

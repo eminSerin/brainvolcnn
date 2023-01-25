@@ -42,7 +42,6 @@ def train():
         num_samples=args.n_samples_per_subj,
         mask=args.mask,
         unmask=unmask,
-        device=args.device,
     )
     val_set = TaskGenDataset(
         val_ids,
@@ -51,17 +50,16 @@ def train():
         num_samples=args.n_samples_per_subj,
         mask=args.mask,
         unmask=unmask,
-        device=args.device,
     )
 
     train_loader = DataLoader(
         train_set,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=args.num_workers,
+        num_workers=args.n_workers,
     )
     val_loader = DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
+        val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers
     )
 
     """Init Model"""

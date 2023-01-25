@@ -38,11 +38,9 @@ def load_timeseries(
             return rest_img, task_img
         return rest_img
     else:
-        rest_img = torch.from_numpy(np.load(rest_file).T).type(torch.float).to(device)
+        rest_img = torch.from_numpy(np.load(rest_file)).type(torch.float).to(device)
         if task_file is not None:
-            task_img = (
-                torch.from_numpy(np.load(task_file).T).type(torch.float).to(device)
-            )
+            task_img = torch.from_numpy(np.load(task_file)).type(torch.float).to(device)
             return rest_img, task_img
         return rest_img
 
