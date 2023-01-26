@@ -142,6 +142,11 @@ def r2_score(input, target):
     return FM.r2score(input.flatten(), target.flatten())
 
 
+def corrcoef(input, target):
+    """Wrapper for torchmetrics.functional.pearson_corrcoef"""
+    return FM.pearson_corrcoef(input.flatten(), target.flatten())
+
+
 def dice(input, target):
     raise NotImplementedError
 

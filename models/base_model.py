@@ -1,6 +1,6 @@
 import torch.nn.functional as F
+from losses.loss_metric import corrcoef, r2_score
 from torch import optim
-from torchmetrics.functional import r2_score
 
 from .utils import _activation_fn, _BaseLayer
 
@@ -82,7 +82,8 @@ class BaseModel(_BaseLayer):
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log("train_loss", loss)
-        self.log("train_r2", r2_score(y_hat.flatten(), y.flatten()))
+        self.log("train_r2", r2_score(y_hat, y))
+        self.log("train_corr", corrcoef(y_hat, y))
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -90,7 +91,8 @@ class BaseModel(_BaseLayer):
         y_hat = self(x)
         val_loss = self.loss_fn(y_hat, y)
         self.log("val_loss", val_loss)
-        self.log("val_r2", r2_score(y_hat.flatten(), y.flatten()))
+        self.log("val_r2", r2_score(y_hat, y))
+        self.log("val_corr", corrcoef(y_hat, y))
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -101,7 +103,8 @@ class BaseModel(_BaseLayer):
     #     y_hat = self(x)
     #     test_loss = self.loss_fn(y_hat, y)
     #     self.log("test_loss", test_loss)
-    #     self.log("test_r2", r2_score(y_hat.flatten(), y.flatten()))
+    #     self.log("test_r2", r2_score(y_hat, y))
+    #     self.log("test_corr", corrcoef(y_hat, y))
     #     return test_loss
 
     def configure_optimizers(self):
