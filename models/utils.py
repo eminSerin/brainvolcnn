@@ -194,7 +194,7 @@ def _interpolate(X, size, mode="trilinear", align_corners=None):
     return F.interpolate(X, size=size, mode=mode, align_corners=align_corners)
 
 
-def _activation_fn(activation="relu", n_channels=None, in_place=True):
+def _activation_fn(activation="relu_inplace", n_channels=None):
     """It returns the activation function.
 
     Parameters
@@ -203,27 +203,32 @@ def _activation_fn(activation="relu", n_channels=None, in_place=True):
         Type of activation function.
         It currently supports "relu", "leakyrelu",
         "prelu", "elu", "tanh", "sigmoid",
-        by default "relu".
+        by default "relu". For ReLU, LeakyReLU,
+        and ELU, it returns the inplace version
+        if you add "_inplace" to the activation
+        function name. For example, "relu_inplace".
     n_channels : int, optional
         Number of parameters for PReLU activation
         function, by default None. This is only
         for PReLU activation function. If None,
         it is set to 1.
-    in_place : bool, optional
-        Whether to perform the operation in-place,
-        by default True. It only works for "relu",
-        leakyrelu", and "elu".
     Returns
     -------
     nn.Module
         Activation function.
     """
     if activation == "relu":
-        return nn.ReLU(inplace=in_place)
+        return nn.ReLU(inplace=False)
+    elif activation == "relu_inplace":
+        return nn.ReLU(inplace=True)
     elif activation == "leakyrelu":
-        return nn.LeakyReLU(inplace=in_place)
+        return nn.LeakyReLU(inplace=False)
+    elif activation == "leakyrelu_inplace":
+        activation = nn.LeakyReLU(inplace=True)
     elif activation == "elu":
-        return nn.ELU(inplace=in_place)
+        return nn.ELU(inplace=False)
+    elif activation == "elu_inplace":
+        return nn.ELU(inplace=True)
     elif activation == "tanh":
         return nn.Tanh()
     elif activation == "sigmoid":

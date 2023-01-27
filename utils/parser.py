@@ -70,17 +70,26 @@ def default_parser():
     parser.add_argument(
         "--activation",
         type=str,
-        choices=["relu", "leaky_relu", "elu", "tanh", "prelu"],
-        default="relu",
-        help="Activation function, default=relu",
+        choices=[
+            "relu",
+            "relu_inplace",
+            "leakyrelu",
+            "leakyrelu_inplace",
+            "elu",
+            "elu_inplace",
+            "tanh",
+            "prelu",
+        ],
+        default="relu_inplace",
+        help="Activation function, default=relu_inplace",
     )
 
     parser.add_argument(
         "--final_activation",
         type=str,
-        choices=["relu", "prelu", "softmax", "sigmoid"],
-        default="relu",
-        help="Final activation function, default=relu",
+        choices=["relu", "relu_inplace", "prelu", "softmax", "sigmoid"],
+        default="relu_inplace",
+        help="Final activation function, default=relu_inplace",
     )
 
     parser.add_argument(

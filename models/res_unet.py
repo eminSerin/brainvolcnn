@@ -22,7 +22,7 @@ class ResUnit(_BaseLayer):
         kernel_size=3,
         padding=1,
         stride=1,
-        activation="relu",
+        activation="relu_inplace",
         up_mode="trilinear",
         downsample=False,
     ) -> None:
