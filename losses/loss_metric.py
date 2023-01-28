@@ -139,7 +139,7 @@ class RCLossAnneal(nn.Module):
 
 def r2_score(input, target):
     """Wrapper for torchmetrics.functional.r2_score"""
-    return FM.r2score(input.flatten(), target.flatten())
+    return FM.r2_score(input.flatten(), target.flatten())
 
 
 def corrcoef(input, target):
