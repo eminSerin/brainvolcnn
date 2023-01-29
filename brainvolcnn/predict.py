@@ -1,11 +1,11 @@
 import os.path as op
 
 import numpy as np
-import pytorch_lightning as pl
 import torch
-from datasets.taskgen_dataset import load_timeseries
 from tqdm import tqdm
-from utils.parser import default_parser
+
+from brainvolcnn.datasets.taskgen_dataset import load_timeseries
+from brainvolcnn.utils.parser import default_parser
 
 
 def predict():
