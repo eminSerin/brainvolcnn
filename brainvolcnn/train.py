@@ -4,13 +4,13 @@ import os.path as op
 import numpy as np
 import pytorch_lightning as pl
 import torch
-from callbacks.callbacks import RCLossMarginTune
-from datasets.taskgen_dataset import TaskGenDataset
-from losses.loss_metric import RCLossAnneal
+from brainvolcnn.callbacks.callbacks import RCLossMarginTune
+from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
+from brainvolcnn.losses.loss_metric import RCLossAnneal
 from pytorch_lightning.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
-from utils.parser import default_parser
+from brainvolcnn.utils.parser import default_parser
 
 
 def train():

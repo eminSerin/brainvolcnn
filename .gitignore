@@ -12,3 +12,9 @@ Thumbs.db
 # Editor files
 .idea/
 .vscode/
+
+# Build files
+build/
+dist/
+*.egg-info/
+*.egg

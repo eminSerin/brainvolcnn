@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="brainvolcnn",
-    version="0.1",
+    version="0.0.1",
     description="Brain Volume CNN",
     url="https://github.com/eminSerin/brainvolcnn",
     author="Emin Serin",

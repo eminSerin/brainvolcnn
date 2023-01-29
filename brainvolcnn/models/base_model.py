@@ -1,6 +1,8 @@
 import torch.nn.functional as F
-from losses.loss_metric import corrcoef, r2_score
 from torch import optim
+
+# from losses.loss_metric import corrcoef, r2_score
+from brainvolcnn.losses.loss_metric import corrcoef, r2_score
 
 from .utils import _activation_fn, _BaseLayer
 

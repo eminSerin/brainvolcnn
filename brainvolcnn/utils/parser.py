@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 
 import torch
-from losses.loss_metric import RCLossAnneal
+from brainvolcnn.losses.loss_metric import RCLossAnneal
 
 
 def default_parser():
