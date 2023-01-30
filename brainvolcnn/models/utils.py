@@ -138,7 +138,7 @@ def _skip_concat(x, skip, mode="trilinear"):
         Output tensor.
     """
     if x.shape != skip.shape:
-        x = _interpolate(x, skip.shape[2:], mode=mode)
+        return torch.cat([_interpolate(x, skip.shape[2:], mode=mode), skip], dim=1)
     return torch.cat([x, skip], dim=1)
 
 
@@ -162,7 +162,7 @@ def _skip_add(x, skip, mode="trilinear"):
         Output tensor.
     """
     if x.shape != skip.shape:
-        x = _interpolate(x, skip.shape[2:], mode=mode)
+        return torch.add(_interpolate(x, skip.shape[2:], mode=mode), skip)
     return torch.add(x, skip)
 
 

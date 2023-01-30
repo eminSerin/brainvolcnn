@@ -37,8 +37,9 @@ class InputLayer(_BaseLayer):
     def forward(self, x):
         out = self.conv(x)
         if (self.in_chans < self.out_chans) and (self.out_chans % self.in_chans == 0):
-            x = x.repeat(1, self.out_chans // self.in_chans, 1, 1, 1)
-            return self._activation_fn(torch.add(out, x))
+            return self._activation_fn(
+                torch.add(out, x.repeat(1, self.out_chans // self.in_chans, 1, 1, 1))
+            )
         return out
 
 
@@ -66,8 +67,7 @@ class Down(_BaseLayer):
 
     def forward(self, x):
         x = self._activation_fn(self.down_conv(x))
-        out = self.conv(x)
-        return self._activation_fn(_skip_add(out, x, mode=self.up_mode))
+        return self._activation_fn(_skip_add(self.conv(x), x, mode=self.up_mode))
 
 
 class Up(_BaseLayer):
@@ -91,10 +91,10 @@ class Up(_BaseLayer):
         )
 
     def forward(self, x, skip):
-        x = self.__activation_fn_up_conv(self.up_conv(x))
-        x = _skip_concat(x, skip, mode=self.up_mode)
-        out = self.conv(x)
-        return self._activation_fn(_skip_add(out, x, mode=self.up_mode))
+        x = _skip_concat(
+            self.__activation_fn_up_conv(self.up_conv(x)), skip, mode=self.up_mode
+        )
+        return self._activation_fn(_skip_add(self.conv(x), x, mode=self.up_mode))
 
 
 class OutputLayer(_BaseLayer):
@@ -151,7 +151,7 @@ class VNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=4,
+        max_level=3,
         fdim=64,
         n_conv=None,
         kernel_size=5,
