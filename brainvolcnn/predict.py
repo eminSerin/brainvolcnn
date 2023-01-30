@@ -4,8 +4,18 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from brainvolcnn.datasets.taskgen_dataset import load_timeseries
-from brainvolcnn.utils.parser import default_parser
+try:
+    from brainvolcnn.datasets.taskgen_dataset import load_timeseries
+    from brainvolcnn.utils.parser import default_parser
+except ImportError:
+    import sys
+
+    path = op.abspath(op.join(op.dirname(__file__), ".."))
+    if path not in sys.path:
+        sys.path.append(path)
+    del sys, path
+    from brainvolcnn.datasets.taskgen_dataset import load_timeseries
+    from brainvolcnn.utils.parser import default_parser
 
 
 def predict():

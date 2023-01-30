@@ -8,10 +8,22 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
-from brainvolcnn.callbacks.callbacks import RCLossMarginTune
-from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
-from brainvolcnn.losses.loss_metric import RCLossAnneal
-from brainvolcnn.utils.parser import default_parser
+try:
+    from brainvolcnn.callbacks.callbacks import RCLossMarginTune
+    from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
+    from brainvolcnn.losses.loss_metric import RCLossAnneal
+    from brainvolcnn.utils.parser import default_parser
+except ImportError:
+    import sys
+
+    path = op.abspath(op.join(op.dirname(__file__), ".."))
+    if path not in sys.path:
+        sys.path.append(path)
+    del sys, path
+    from brainvolcnn.callbacks.callbacks import RCLossMarginTune
+    from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
+    from brainvolcnn.losses.loss_metric import RCLossAnneal
+    from brainvolcnn.utils.parser import default_parser
 
 
 def train():
