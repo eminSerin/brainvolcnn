@@ -18,9 +18,9 @@ def default_parser():
         "--working_dir", type=str, help="Path to working directory (for saving models)"
     )
 
-    # parser.add_argument(
-    #     "--ver", type=str, help="Additional string for the name of the file"
-    # )
+    parser.add_argument(
+        "--ver", type=str, help="Additional string for the name of the file"
+    )
 
     parser.add_argument(
         "--subj_list",
@@ -208,6 +208,10 @@ def default_parser():
         )
     else:
         raise ValueError(f"Loss {args.loss} not supported")
+
+    # Version
+    if args.ver is None:
+        args.ver = f"{args.architecture}_{args.lr}_{args.loss}_{args.optimizer}_{args.activation}"
 
     # Optimizer
     if args.optimizer == "adam":

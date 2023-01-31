@@ -5,6 +5,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
@@ -113,17 +114,20 @@ def train():
         monitor="val_loss",
         dirpath=args.working_dir,
         filename="best_loss",
-        save_top_k=2,
+        save_top_k=1,
         mode="min",
     )
     checkpoint_callback_r2 = ModelCheckpoint(
         monitor="val_r2",
         dirpath=args.working_dir,
         filename="best_r2",
-        save_top_k=2,
+        save_top_k=1,
         mode="max",
     )
     callbacks = [checkpoint_callback_loss, checkpoint_callback_r2]
+
+    # Logger
+    logger = TensorBoardLogger(args.working_dir, name="logs", version=args.ver)
 
     """Train Model"""
     ## TODO: Add early stopping!
@@ -135,6 +139,7 @@ def train():
         accelerator=args.device,
         default_root_dir=args.working_dir,
         callbacks=callbacks,
+        logger=logger,
     )
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
