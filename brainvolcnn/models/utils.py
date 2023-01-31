@@ -239,3 +239,23 @@ def _activation_fn(activation="relu_inplace", n_channels=None):
         return nn.PReLU(num_parameters=n_channels, init=0.25)
     else:
         raise NotImplementedError
+
+
+def _reparameterize(mu, logvar):
+    """Reparameterization trick by sampling from an isotropic unit Gaussian.
+
+    Parameters
+    ----------
+    mu : torch.Tensor
+        Mean of the latent distribution Q(z|X).
+    logvar : torch.Tensor
+        Log-variance of the latent distribution Q(z|X).
+
+    Returns
+    -------
+    torch.Tensor
+        Sampled latent vector.
+    """
+    std = torch.exp(0.5 * logvar)
+    eps = torch.randn_like(std)
+    return mu + eps * std

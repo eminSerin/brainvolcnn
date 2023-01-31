@@ -102,12 +102,10 @@ class OutputLayer(_BaseLayer):
 
     def __init__(self, *args, kernel_size=1, **kwargs) -> None:
         super().__init__(*args, kernel_size=kernel_size, **kwargs)
-        self.conv = _nConv(
+        self.conv = nn.Conv3d(
             self.in_chans,
             self.out_chans,
-            n_conv=1,
             kernel_size=self.kernel_size,
-            activation=self.activation,
             padding=self.padding,
         )
 

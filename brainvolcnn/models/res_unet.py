@@ -294,7 +294,6 @@ class ResUNet(BaseModel):
                 padding=self.padding,
                 stride=2,
             ),
-            self._activation_fn,
         )
 
     def forward(self, x):

@@ -70,27 +70,43 @@ def train():
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.n_workers,
+        drop_last=True,
     )
     val_loader = DataLoader(
-        val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.n_workers
+        val_set,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.n_workers,
+        drop_last=True,
     )
 
     """Init Model"""
-    model = args.architecture(
-        in_chans=args.n_channels,
-        out_chans=args.n_out_channels,
-        fdim=args.fdim,
-        activation=args.activation,
-        final_activation=args.final_activation,
-        optimizer=args.optimizer,
-        up_mode=args.upsampling_mode,
-        loss_fn=args.loss,
-    )
     # Loads model from checkpoint if specified
     if args.checkpoint_file is not None:
         if not op.exists(args.checkpoint_file):
             raise FileNotFoundError(f"{args.checkpoint_file} does not exist!")
-        model.load_from_checkpoint(args.checkpoint_file, loss_fn=args.loss)
+        model = args.architecture.load_from_checkpoint(
+            args.checkpoint_file,
+            in_chans=args.n_channels,
+            out_chans=args.n_out_channels,
+            fdim=args.fdim,
+            activation=args.activation,
+            final_activation=args.final_activation,
+            optimizer=args.optimizer,
+            up_mode=args.upsampling_mode,
+            loss_fn=args.loss,
+        )
+    else:
+        model = args.architecture(
+            in_chans=args.n_channels,
+            out_chans=args.n_out_channels,
+            fdim=args.fdim,
+            activation=args.activation,
+            final_activation=args.final_activation,
+            optimizer=args.optimizer,
+            up_mode=args.upsampling_mode,
+            loss_fn=args.loss,
+        )
 
     """Checkpoint"""
     checkpoint_callback_loss = ModelCheckpoint(

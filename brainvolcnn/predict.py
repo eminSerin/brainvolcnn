@@ -1,3 +1,4 @@
+import os
 import os.path as op
 
 import numpy as np
@@ -27,13 +28,16 @@ def predict():
     if op.exists(args.working_dir):
         raise FileExistsError(f"{args.working_dir} already exists!")
     else:
-        op.makedirs(args.working_dir)
+        os.makedirs(args.working_dir)
 
     """Load Datalist"""
     subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
 
     """Init Model"""
-    model = args.architecture(
+    if args.checkpoint_file is None:
+        raise ValueError("Must provide a checkpoint to load!")
+    model = args.architecture.load_from_checkpoint(
+        args.checkpoint_file,
         in_chans=args.n_channels,
         out_chans=args.n_out_channels,
         fdim=args.fdim,
@@ -43,9 +47,6 @@ def predict():
         up_mode=args.upsampling_mode,
         loss_fn=args.loss,
     )
-    if args.checkpoint is None:
-        raise ValueError("Must provide a checkpoint to load!")
-    model.load_from_checkpoint(args.checkpoint_file)
 
     """Predict"""
     print("Predicting...")
@@ -66,10 +67,11 @@ def predict():
                             rest_file,
                             mask=args.mask,
                             unmask=args.unmask,
-                            crop=args.crop,
                             device=args.device,
                         )
-                        pred_list.append(model(img).cpu().detach().numpy().squeeze(0))
+                        pred_list.append(
+                            model(img.unsqueeze(0)).cpu().detach().numpy().squeeze(0)
+                        )
                     np.save(pred_file, np.array(pred_list))
                 else:
                     print(f"Skipping {id} because prediction already exists!")

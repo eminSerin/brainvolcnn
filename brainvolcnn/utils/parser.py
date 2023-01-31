@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 
 import torch
+
 from brainvolcnn.losses.loss_metric import RCLossAnneal
 
 
@@ -17,9 +18,9 @@ def default_parser():
         "--working_dir", type=str, help="Path to working directory (for saving models)"
     )
 
-    parser.add_argument(
-        "--ver", type=str, help="Additional string for the name of the file"
-    )
+    # parser.add_argument(
+    #     "--ver", type=str, help="Additional string for the name of the file"
+    # )
 
     parser.add_argument(
         "--subj_list",

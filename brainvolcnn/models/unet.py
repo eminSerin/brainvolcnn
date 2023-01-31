@@ -39,7 +39,7 @@ class UNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=4,
+        max_level=5,
         fdim=64,
         n_conv=3,
         kernel_size=3,
@@ -95,9 +95,7 @@ class UNet(BaseModel):
                 )
             )
 
-        self.final_conv = nn.Sequential(
-            nn.Conv3d(feat, self.out_chans, kernel_size=1), self.final_activation
-        )
+        self.final_conv = nn.Sequential(nn.Conv3d(feat, self.out_chans, kernel_size=1))
 
     def forward(self, x):
         skip_connections = []
