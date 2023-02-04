@@ -1,4 +1,5 @@
 import os
+import os.path as op
 from argparse import ArgumentParser
 
 import numpy as np
@@ -43,16 +44,16 @@ def compute_losses_across_subj(subj, subj_ids, pred_dir, true_dir, batch_size):
     batch_ids = np.random.choice(subj_ids, batch_size + 1, replace=False)
     other_ids = np.setdiff1d(batch_ids, np.asarray([subj]))[:batch_size]
 
-    pred = np.load(os.path.join(pred_dir, f"{subj}_pred.npy")).mean(axis=0).flatten()
+    pred = np.load(op.join(pred_dir, f"{subj}_pred.npy")).mean(axis=0).flatten()
     target = np.load(
-        os.path.join(true_dir, f"{subj}_joint_MNI_task_contrasts.npy")
+        op.join(true_dir, f"{subj}_joint_MNI_task_contrasts.npy")
     ).flatten()
     within_mse = compute_loss(pred, target)
 
     across_mse = 0
     for other in other_ids:
         target = np.load(
-            os.path.join(true_dir, f"{other}_joint_MNI_task_contrasts.npy")
+            op.join(true_dir, f"{other}_joint_MNI_task_contrasts.npy")
         ).flatten()
         across_mse += compute_loss(pred, target) / (len(other_ids))
     return within_mse, across_mse
@@ -70,7 +71,10 @@ def main(args):
     )
     print(f"Within MSE: {np.mean(within_mse)}, Std: {np.std(within_mse)}")
     print(f"Across MSE: {np.mean(across_mse)}, Std: {np.std(across_mse)}")
-    np.save("within_and_across_mse.npy", {"within": within_mse, "across": across_mse})
+    np.save(
+        op.join(args.pred_dir, "within_and_across_mse.npy"),
+        {"within": within_mse, "across": across_mse},
+    )
 
 
 if __name__ == "__main__":
