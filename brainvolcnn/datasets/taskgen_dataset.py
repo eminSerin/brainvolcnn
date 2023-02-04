@@ -20,8 +20,9 @@ def load_timeseries(
     if not op.exists(rest_file):
         raise FileExistsError(f"{rest_file} does not exist!")
     # Task
-    if not op.exists(task_file):
-        raise FileExistsError(f"{task_file} does not exist!")
+    if task_file is not None:
+        if not op.exists(task_file):
+            raise FileExistsError(f"{task_file} does not exist!")
 
     if unmask:
         rest_img = (
