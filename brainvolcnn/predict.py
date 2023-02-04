@@ -46,7 +46,7 @@ def predict():
         optimizer=args.optimizer,
         up_mode=args.upsampling_mode,
         loss_fn=args.loss,
-    )
+    ).to(args.device)
 
     """Predict"""
     print("Predicting...")
