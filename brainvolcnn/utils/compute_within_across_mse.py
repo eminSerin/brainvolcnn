@@ -1,5 +1,6 @@
 import os.path as op
 from argparse import ArgumentParser
+from glob import glob
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -7,12 +8,6 @@ from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 
 parser = ArgumentParser()
-
-parser.add_argument(
-    "--subj_list",
-    type=str,
-    help="File containing the subject ID list, one subject ID on each line",
-)
 
 parser.add_argument("--pred_dir", type=str, help="Path to the output directory")
 
@@ -59,15 +54,20 @@ def compute_losses_across_subj(subj, subj_ids, pred_dir, true_dir, batch_size):
 
 
 def main(args):
-    subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
+    subj_ids = [
+        int(op.basename(file).split("_")[0])
+        for file in glob(op.join(args.pred_dir, "*_pred.npy"))
+    ]
     within_mse = 0
     across_mse = 0
-    within_mse, across_mse = zip(*Parallel(n_jobs=args.n_jobs)(
-        delayed(compute_losses_across_subj)(
-            subj, subj_ids, args.pred_dir, args.target_dir, args.batch_size
+    within_mse, across_mse = zip(
+        *Parallel(n_jobs=args.n_jobs)(
+            delayed(compute_losses_across_subj)(
+                subj, subj_ids, args.pred_dir, args.target_dir, args.batch_size
+            )
+            for subj in tqdm(subj_ids)
         )
-        for subj in tqdm(subj_ids)
-    ))
+    )
     print(f"Within MSE: {np.mean(within_mse)}, Std: {np.std(within_mse)}")
     print(f"Across MSE: {np.mean(across_mse)}, Std: {np.std(across_mse)}")
     np.save(
