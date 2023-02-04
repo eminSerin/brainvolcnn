@@ -155,21 +155,21 @@ def default_parser():
     parser.add_argument(
         "--min_within_subj_margin",
         type=float,
-        default=0,
+        default=0.01,
         help="Minimum within-subject margin that was aimed for",
     )
 
     parser.add_argument(
         "--init_across_subj_margin",
         type=float,
-        default=5.0,
+        default=0.5,
         help="Initial across-subject margin, which should be computed on the training set",
     )
 
     parser.add_argument(
         "--max_across_subj_margin",
         type=float,
-        default=10.0,
+        default=1,
         help="Maximum across-subject margin that was aimed for",
     )
 
