@@ -1,4 +1,3 @@
-import os
 import os.path as op
 from argparse import ArgumentParser
 
@@ -63,12 +62,12 @@ def main(args):
     subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
     within_mse = 0
     across_mse = 0
-    within_mse, across_mse = Parallel(n_jobs=args.n_jobs)(
+    within_mse, across_mse = zip(*Parallel(n_jobs=args.n_jobs)(
         delayed(compute_losses_across_subj)(
             subj, subj_ids, args.pred_dir, args.target_dir, args.batch_size
         )
         for subj in tqdm(subj_ids)
-    )
+    ))
     print(f"Within MSE: {np.mean(within_mse)}, Std: {np.std(within_mse)}")
     print(f"Across MSE: {np.mean(across_mse)}, Std: {np.std(across_mse)}")
     np.save(
