@@ -6,6 +6,34 @@ from torchmetrics import functional as FM
 ##TODO: Add docstrings!
 
 
+def r2_score(input, target):
+    """Wrapper for torchmetrics.functional.r2_score"""
+    return FM.r2_score(input.flatten(), target.flatten())
+
+
+def r2_loss(input, target):
+    """Loss function for R2 score."""
+    return 1 - r2_score(input, target)
+
+
+def corrcoef(input, target):
+    """Wrapper for torchmetrics.functional.pearson_corrcoef"""
+    return FM.pearson_corrcoef(input.flatten(), target.flatten())
+
+
+def corrcoef_loss(input, target):
+    """Loss function for Pearson correlation coefficient."""
+    return 1 - corrcoef(input, target)
+
+
+def dice(input, target):
+    raise NotImplementedError
+
+
+def dice_auc(input, target):
+    raise NotImplementedError
+
+
 def _batch_mse(input, target):
     """Computes the mean squared error between two tensors.
 
@@ -31,7 +59,7 @@ def _batch_mse(input, target):
     return torch.mean((input.flatten(1) - target.flatten(1)) ** 2, dim=-1)
 
 
-def _rc_loss_fn(input, target):
+def _rc_loss_fn(input, target, loss="mse"):
     """Computes the Reconstruction and Contrastive Losses.
 
     Reconstruction loss is the mean squared error between the input and target, aiming to minimize the difference between predicted and target values. Contrastive loss is the mean squared error between the input and the flipped target, aiming to maximize the difference between predicted values and target values of other subjects in a given batch.
@@ -41,14 +69,19 @@ def _rc_loss_fn(input, target):
             "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
         )
 
-    # Reconstruction loss (i.e., MSE)
-    recon_loss = _batch_mse(input, target)
-    # Contrastive loss
-    contrast_loss = _batch_mse(input, torch.flip(target, dims=[0]))
-    return torch.mean(recon_loss), torch.mean(contrast_loss)
+    if loss == "mse":
+        # Reconstruction loss (i.e., MSE)
+        recon_loss = _batch_mse(input, target)
+        # Contrastive loss
+        contrast_loss = _batch_mse(input, torch.flip(target, dims=[0]))
+        return torch.mean(recon_loss), torch.mean(contrast_loss)
+    elif loss == "r2":
+        recon_loss = r2_score(input, target)
+        contrast_loss = r2_score(input, torch.flip(target, dims=[0]))
+        return recon_loss, contrast_loss
 
 
-def rc_loss(input, target, within_margin=0, between_margin=0):
+def rc_loss(input, target, loss="mse", within_margin=0, between_margin=0):
     """Construction Reconstruction Loss (RC Loss) as described in [1].
 
     Parameters
@@ -57,6 +90,8 @@ def rc_loss(input, target, within_margin=0, between_margin=0):
         Predicted values.
     target : torch.Tensor
         Target values.
+    loss : str, optional
+        Loss function to use, by default "mse".
     within_margin : int, optional
         Same subject (reconstructive) margin, by default 0.
     between_margin : int, optional
@@ -71,7 +106,7 @@ def rc_loss(input, target, within_margin=0, between_margin=0):
     -----------
     [1] Ngo, Gia H., et al. "Predicting individual task contrasts from resting‐state functional connectivity using a surface‐based convolutional network." NeuroImage 248 (2022): 118849.
     """
-    recon_loss, contrast_loss = _rc_loss_fn(input, target)
+    recon_loss, contrast_loss = _rc_loss_fn(input, target, loss=loss)
     return torch.clamp(recon_loss - within_margin, min=0.0) + torch.clamp(
         recon_loss - contrast_loss + between_margin, min=0.0
     )
@@ -84,6 +119,8 @@ class RCLossAnneal(nn.Module):
     ----------
     epoch : int, optional
         The current epoch, by default 0
+    loss : str, optional
+        Loss function to use, by default "mse"
     init_within_margin : int, optional
         Initial same subject (reconstructive) margin, by default 4
     init_between_margin : int, optional
@@ -103,14 +140,16 @@ class RCLossAnneal(nn.Module):
 
     def __init__(
         self,
+        loss="mse",
         epoch=0,
-        init_within_margin=4,
-        init_between_margin=5,
-        min_within_margin=1,
-        max_between_margin=10,
+        init_within_margin=0.5,
+        init_between_margin=0.5,
+        min_within_margin=0.01,
+        max_between_margin=1,
         margin_anneal_step=10,
     ):
         super().__init__()
+        self.loss = loss
         self.init_within_margin = init_within_margin
         self.init_between_margin = init_between_margin
         self.min_within_margin = min_within_margin
@@ -134,22 +173,10 @@ class RCLossAnneal(nn.Module):
         )
 
     def forward(self, input, target):
-        return rc_loss(input, target, self.within_margin, self.between_margin)
-
-
-def r2_score(input, target):
-    """Wrapper for torchmetrics.functional.r2_score"""
-    return FM.r2_score(input.flatten(), target.flatten())
-
-
-def corrcoef(input, target):
-    """Wrapper for torchmetrics.functional.pearson_corrcoef"""
-    return FM.pearson_corrcoef(input.flatten(), target.flatten())
-
-
-def dice(input, target):
-    raise NotImplementedError
-
-
-def dice_auc(input, target):
-    raise NotImplementedError
+        return rc_loss(
+            input,
+            target,
+            loss=self.loss,
+            within_margin=self.within_margin,
+            between_margin=self.between_margin,
+        )

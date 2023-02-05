@@ -19,9 +19,7 @@ except ImportError:
     from brainvolcnn.utils.parser import default_parser
 
 
-def predict():
-    args = default_parser()
-
+def predict(args):
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
@@ -53,8 +51,8 @@ def predict():
     model.eval()
     with torch.no_grad():
         with tqdm(total=len(subj_ids)) as pbar:
-            for i, id in enumerate(subj_ids):
-                pbar.set_description(f"Predicting {subj_ids[i]}...")
+            for id in subj_ids:
+                pbar.set_description(f"Predicting {id}...")
                 pbar.update(1)
                 pred_file = op.join(args.working_dir, f"{id}_pred.npy")
                 if not op.exists(pred_file):
@@ -80,4 +78,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    predict()
+    predict(default_parser())

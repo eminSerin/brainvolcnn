@@ -5,7 +5,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
+from pytorch_lightning.loggers.tensorboard import NeptuneLogger, TensorBoardLogger
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
@@ -27,9 +27,7 @@ except ImportError:
     from brainvolcnn.utils.parser import default_parser
 
 
-def train():
-    args = default_parser()
-
+def train(args):
     # Set random seed
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -127,7 +125,17 @@ def train():
     callbacks = [checkpoint_callback_loss, checkpoint_callback_r2]
 
     # Logger
-    logger = TensorBoardLogger(args.working_dir, name="logs", version=args.ver)
+    if args.logger == "tensorboard":
+        logger = TensorBoardLogger(args.working_dir, name="logs", version=args.ver)
+    elif args.logger == "neptune":
+        logger = NeptuneLogger(
+            project_name="task-generation/brainvolcnn",
+            experiment_name=args.ver,
+            log_model_checkpoints=False,
+            tags=["training", args.architecture.__name__],
+        )
+    logger.log_hyperparams(args._hparams)
+    logger.log_model_summary(model=model, max_depth=-1)
 
     """Train Model"""
     ## TODO: Add early stopping!
@@ -145,4 +153,4 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    train(default_parser())

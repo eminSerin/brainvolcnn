@@ -96,7 +96,7 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["rc", "mse"],
+        choices=["rc_mse", "rc_r2", "mse"],
         default="mse",
         help="Loss function, default=mse",
     )
@@ -148,7 +148,7 @@ def default_parser():
     parser.add_argument(
         "--init_within_subj_margin",
         type=float,
-        default=0.6,
+        default=0.5,
         help="Initial within-subject margin, which should be computed on the training set",
     )
 
@@ -162,7 +162,7 @@ def default_parser():
     parser.add_argument(
         "--init_across_subj_margin",
         type=float,
-        default=0.5,
+        default=0.6,
         help="Initial across-subject margin, which should be computed on the training set",
     )
 
@@ -188,6 +188,13 @@ def default_parser():
 
     parser.add_argument("--checkpoint_file", type=str, help="Path to checkpoint file")
 
+    parser.add_argument(
+        "--logger",
+        type=str,
+        default="tensorboard",
+        help="Logger to use, default=tensorboard",
+    )
+
     args = parser.parse_args()
 
     if args.mask is not None:
@@ -195,17 +202,39 @@ def default_parser():
     else:
         args.unmask = False
 
+    args._hparams = {
+        "loss": args.loss,
+        "optimizer": args.optimizer,
+        "lr": args.lr,
+        "architecture": args.architecture,
+        "activation": args.activation,
+        "n_epochs": args.n_epochs,
+    }
+
     # Loss
     if args.loss == "mse":
         args.loss = torch.nn.MSELoss()
-    elif args.loss == "rc":
-        args.loss = RCLossAnneal(
+    elif args.loss in ["rc_mse", "rc_r2"]:
+        if args.loss == "rc_mse":
+            loss_param = "mse"
+        elif args.loss == "rc_r2":
+            loss_param = "r2"
+        RCLossAnneal(
+            loss=loss_param,
             init_within_margin=args.init_within_subj_margin,
             init_between_margin=args.init_across_subj_margin,
             min_within_margin=args.min_within_subj_margin,
             max_between_margin=args.max_across_subj_margin,
             margin_anneal_step=args.margin_anneal_step,
         )
+        rc_params = {
+            "init_within_margin": args.init_within_subj_margin,
+            "init_between_margin": args.init_across_subj_margin,
+            "min_within_margin": args.min_within_subj_margin,
+            "max_between_margin": args.max_across_subj_margin,
+            "margin_anneal_step": args.margin_anneal_step,
+        }
+        args._hparams = {**args._hparams, **rc_params}
     else:
         raise ValueError(f"Loss {args.loss} not supported")
 

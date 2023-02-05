@@ -24,6 +24,8 @@ parser.add_argument(
     help="Number of subjects used to compute the within/across subject loss",
 )
 
+parser.add_argument("--n_subj", type=int, default=100, help="Number of subjects")
+
 parser.add_argument("--n_jobs", type=int, default=1, help="Number of jobs")
 
 parser.add_argument("--seed", type=int, default=42, help="Random seed")
@@ -58,6 +60,7 @@ def main(args):
         int(op.basename(file).split("_")[0])
         for file in glob(op.join(args.pred_dir, "*_pred.npy"))
     ]
+    subj_ids = np.random.choice(subj_ids, args.n_subj, replace=False)
     within_mse = 0
     across_mse = 0
     within_mse, across_mse = zip(
