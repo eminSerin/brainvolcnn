@@ -5,7 +5,8 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.loggers.tensorboard import NeptuneLogger, TensorBoardLogger
+from pytorch_lightning.loggers.neptune import NeptuneLogger
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
@@ -134,8 +135,8 @@ def train(args):
             log_model_checkpoints=False,
             tags=["training", args.architecture.__name__],
         )
+        logger.log_model_summary(model=model, max_depth=-1)
     logger.log_hyperparams(args._hparams)
-    logger.log_model_summary(model=model, max_depth=-1)
 
     """Train Model"""
     ## TODO: Add early stopping!

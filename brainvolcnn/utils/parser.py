@@ -219,7 +219,7 @@ def default_parser():
             loss_param = "mse"
         elif args.loss == "rc_r2":
             loss_param = "r2"
-        RCLossAnneal(
+        args.loss = RCLossAnneal(
             loss=loss_param,
             init_within_margin=args.init_within_subj_margin,
             init_between_margin=args.init_across_subj_margin,
