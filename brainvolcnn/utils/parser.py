@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 import torch
 
-from brainvolcnn.losses.loss_metric import RCLossAnneal
+from brainvolcnn.losses.loss_metric import R2, MSELoss, PearsonCorr, RCLossAnneal
 
 
 def default_parser():
@@ -96,9 +96,16 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["rc_mse", "rc_r2", "mse"],
+        choices=["rc", "mse"],
         default="mse",
         help="Loss function, default=mse",
+    )
+
+    parser.add_argument(
+        "--loss_mask",
+        type=str,
+        default=None,
+        help="Mask to use for loss computation, default=None",
     )
 
     parser.add_argument(
@@ -213,30 +220,23 @@ def default_parser():
 
     # Loss
     if args.loss == "mse":
-        args.loss = torch.nn.MSELoss()
-    elif args.loss in ["rc_mse", "rc_r2"]:
-        if args.loss == "rc_mse":
-            loss_param = "mse"
-        elif args.loss == "rc_r2":
-            loss_param = "r2"
+        args.loss = MSELoss(mask=args.loss_mask)
+    elif args.loss == "rc":
         args.loss = RCLossAnneal(
-            loss=loss_param,
             init_within_margin=args.init_within_subj_margin,
             init_between_margin=args.init_across_subj_margin,
             min_within_margin=args.min_within_subj_margin,
             max_between_margin=args.max_across_subj_margin,
             margin_anneal_step=args.margin_anneal_step,
+            mask=args.loss_mask,
         )
-        rc_params = {
-            "init_within_margin": args.init_within_subj_margin,
-            "init_between_margin": args.init_across_subj_margin,
-            "min_within_margin": args.min_within_subj_margin,
-            "max_between_margin": args.max_across_subj_margin,
-            "margin_anneal_step": args.margin_anneal_step,
-        }
-        args._hparams = {**args._hparams, **rc_params}
     else:
         raise ValueError(f"Loss {args.loss} not supported")
+
+    args.add_loss = {
+        "corr": PearsonCorr(mask=args.loss_mask),
+        "r2": R2(mask=args.loss_mask),
+    }
 
     # Version
     if args.ver is None:

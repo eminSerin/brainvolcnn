@@ -3,7 +3,11 @@ import torch
 import torch.nn as nn
 from torchmetrics import functional as FM
 
+from brainvolcnn.datasets.utils import MaskTensor
+
 ##TODO: Add docstrings!
+
+"""Functional"""
 
 
 def r2_score(input, target):
@@ -59,7 +63,7 @@ def _batch_mse(input, target):
     return torch.mean((input.flatten(1) - target.flatten(1)) ** 2, dim=-1)
 
 
-def _rc_loss_fn(input, target, loss="mse"):
+def _rc_loss_fn(input, target):
     """Computes the Reconstruction and Contrastive Losses.
 
     Reconstruction loss is the mean squared error between the input and target, aiming to minimize the difference between predicted and target values. Contrastive loss is the mean squared error between the input and the flipped target, aiming to maximize the difference between predicted values and target values of other subjects in a given batch.
@@ -69,19 +73,14 @@ def _rc_loss_fn(input, target, loss="mse"):
             "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
         )
 
-    if loss == "mse":
-        # Reconstruction loss (i.e., MSE)
-        recon_loss = _batch_mse(input, target)
-        # Contrastive loss
-        contrast_loss = _batch_mse(input, torch.flip(target, dims=[0]))
-        return torch.mean(recon_loss), torch.mean(contrast_loss)
-    elif loss == "r2":
-        recon_loss = r2_score(input, target)
-        contrast_loss = r2_score(input, torch.flip(target, dims=[0]))
-        return recon_loss, contrast_loss
+    # Reconstruction loss (i.e., MSE)
+    recon_loss = _batch_mse(input, target)
+    # Contrastive loss
+    contrast_loss = _batch_mse(input, torch.flip(target, dims=[0]))
+    return torch.mean(recon_loss), torch.mean(contrast_loss)
 
 
-def rc_loss(input, target, loss="mse", within_margin=0, between_margin=0):
+def rc_loss(input, target, within_margin=0, between_margin=0):
     """Construction Reconstruction Loss (RC Loss) as described in [1].
 
     Parameters
@@ -90,8 +89,6 @@ def rc_loss(input, target, loss="mse", within_margin=0, between_margin=0):
         Predicted values.
     target : torch.Tensor
         Target values.
-    loss : str, optional
-        Loss function to use, by default "mse".
     within_margin : int, optional
         Same subject (reconstructive) margin, by default 0.
     between_margin : int, optional
@@ -106,10 +103,59 @@ def rc_loss(input, target, loss="mse", within_margin=0, between_margin=0):
     -----------
     [1] Ngo, Gia H., et al. "Predicting individual task contrasts from resting‐state functional connectivity using a surface‐based convolutional network." NeuroImage 248 (2022): 118849.
     """
-    recon_loss, contrast_loss = _rc_loss_fn(input, target, loss=loss)
+    recon_loss, contrast_loss = _rc_loss_fn(input, target)
     return torch.clamp(recon_loss - within_margin, min=0.0) + torch.clamp(
         recon_loss - contrast_loss + between_margin, min=0.0
     )
+
+
+"""OOP"""
+
+
+class MSELoss(nn.Module):
+    def __init__(self, mask=None):
+        super().__init__()
+        if mask is not None:
+            self.mask = MaskTensor(mask)
+
+    def forward(self, input, target):
+        if self.mask is not None:
+            return nn.functional.mse_loss(
+                self.mask.apply_mask(input), self.mask.apply_mask(target)
+            )
+        return nn.functional.mse_loss(input, target)
+
+
+class PearsonCorr(nn.Module):
+    def __init__(self, loss=False, mask=None):
+        super().__init__()
+        self.loss = loss
+        if mask is not None:
+            self.mask = MaskTensor(mask)
+
+    def forward(self, input, target):
+        if self.mask is not None:
+            input = self.mask.apply_mask(input)
+            target = self.mask.apply_mask(target)
+        if self.loss:
+            return corrcoef_loss(input, target)
+        return corrcoef(input, target)
+
+
+class R2(nn.Module):
+    def __init__(self, loss=False, mask=None):
+        super().__init__()
+        self.loss = loss
+        if mask is not None:
+            self.mask = MaskTensor(mask)
+
+    def forward(self, input, target):
+        if self.mask is not None:
+            input = self.mask.apply_mask(input)
+            target = self.mask.apply_mask(target)
+        if self.loss:
+            return r2_loss(input, target)
+        return r2_score(input, target)
 
 
 class RCLossAnneal(nn.Module):
@@ -119,8 +165,6 @@ class RCLossAnneal(nn.Module):
     ----------
     epoch : int, optional
         The current epoch, by default 0
-    loss : str, optional
-        Loss function to use, by default "mse"
     init_within_margin : int, optional
         Initial same subject (reconstructive) margin, by default 4
     init_between_margin : int, optional
@@ -131,6 +175,8 @@ class RCLossAnneal(nn.Module):
         Maximum between subject (contrastive) margin, by default 10
     margin_anneal_step : int, optional
         The number of epochs should be done before margin annealing happens, by default 10
+    mask : torch.Tensor, optional
+        Mask tensor, by default None.
 
     Returns
     ----------
@@ -140,21 +186,22 @@ class RCLossAnneal(nn.Module):
 
     def __init__(
         self,
-        loss="mse",
         epoch=0,
         init_within_margin=0.5,
         init_between_margin=0.5,
         min_within_margin=0.01,
         max_between_margin=1,
         margin_anneal_step=10,
+        mask=None,
     ):
         super().__init__()
-        self.loss = loss
         self.init_within_margin = init_within_margin
         self.init_between_margin = init_between_margin
         self.min_within_margin = min_within_margin
         self.max_between_margin = max_between_margin
         self.margin_anneal_step = margin_anneal_step
+        if mask is not None:
+            self.mask = MaskTensor(mask)
         self.update_margins(epoch)
 
     def update_margins(self, epoch):
@@ -173,10 +220,16 @@ class RCLossAnneal(nn.Module):
         )
 
     def forward(self, input, target):
+        if self.mask is not None:
+            return rc_loss(
+                self.masker.apply_mask(input),
+                self.masker.apply_mask(target),
+                within_margin=self.within_margin,
+                between_margin=self.between_margin,
+            )
         return rc_loss(
             input,
             target,
-            loss=self.loss,
             within_margin=self.within_margin,
             between_margin=self.between_margin,
         )

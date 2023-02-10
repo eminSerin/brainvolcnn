@@ -47,10 +47,11 @@ class UNet(BaseModel):
         stride=1,
         activation="relu_inplace",
         up_mode="trilinear",
-        final_activation="relu_inplace",
+        final_activation=None,
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=0.001,
+        **kwargs,
     ) -> None:
         super().__init__(
             in_chans,
@@ -67,6 +68,7 @@ class UNet(BaseModel):
             loss_fn,
             optimizer,
             lr,
+            **kwargs,
         )
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()

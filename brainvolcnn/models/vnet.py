@@ -157,10 +157,11 @@ class VNet(BaseModel):
         stride=1,
         activation="prelu",
         up_mode="trilinear",
-        final_activation="prelu",
+        final_activation=None,
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=0.001,
+        **kwargs,
     ) -> None:
         super().__init__(
             in_chans,
@@ -177,6 +178,7 @@ class VNet(BaseModel):
             loss_fn,
             optimizer,
             lr,
+            **kwargs,
         )
         self._n_convs = [2 if i == 0 else 3 for i in range(max_level - 1)]
 

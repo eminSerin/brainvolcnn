@@ -35,7 +35,7 @@ class BaseModel(_BaseLayer):
         Upscaling method, by default "trilinear".
         It will be used if the input and target shapes are different.
     final_activation : str, optional
-        Final activation function, by default "relu".
+        Final activation function, by default None.
     loss_fn : function, optional
         Loss function, by default F.mse_loss.
     optimizer : function, optional
@@ -56,10 +56,11 @@ class BaseModel(_BaseLayer):
         stride=1,
         activation="relu_inplace",
         up_mode="trilinear",
-        final_activation="relu_inplace",
+        final_activation=None,
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=1e-3,
+        add_loss={"corrcoef": corrcoef, "r2": r2_score},
     ) -> None:
         super().__init__(
             in_chans,
@@ -74,18 +75,20 @@ class BaseModel(_BaseLayer):
         self.max_level = max_level
         self.fdim = fdim
         self.loss_fn = loss_fn
+        self.add_loss = add_loss
         self.optimizer = optimizer
         self.lr = lr
         self._features = [fdim * 2**i for i in range(max_level)]
-        self.final_activation = _activation_fn(final_activation, self.out_chans)
+        if final_activation is not None:
+            self.final_activation = _activation_fn(final_activation, self.out_chans)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
         self.log("train_loss", loss)
-        self.log("train_r2", r2_score(y_hat, y))
-        self.log("train_corr", corrcoef(y_hat, y))
+        for name, fn in self.add_loss.items():
+            self.log(f"train_{name}", fn(y_hat, y))
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -93,8 +96,8 @@ class BaseModel(_BaseLayer):
         y_hat = self(x)
         val_loss = self.loss_fn(y_hat, y)
         self.log("val_loss", val_loss)
-        self.log("val_r2", r2_score(y_hat, y))
-        self.log("val_corr", corrcoef(y_hat, y))
+        for name, fn in self.add_loss.items():
+            self.log(f"train_{name}", fn(y_hat, y))
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):

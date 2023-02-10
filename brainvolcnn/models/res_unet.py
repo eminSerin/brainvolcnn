@@ -210,10 +210,11 @@ class ResUNet(BaseModel):
         stride=1,
         activation="relu",
         up_mode="trilinear",
-        final_activation="relu",
+        final_activation=None,
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=0.001,
+        **kwargs,
     ) -> None:
         super().__init__(
             in_chans,
@@ -230,6 +231,7 @@ class ResUNet(BaseModel):
             loss_fn,
             optimizer,
             lr,
+            **kwargs,
         )
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()

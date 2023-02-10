@@ -95,6 +95,7 @@ def train(args):
             optimizer=args.optimizer,
             up_mode=args.upsampling_mode,
             loss_fn=args.loss,
+            add_loss=args.add_loss,
         )
     else:
         model = args.architecture(
@@ -106,6 +107,7 @@ def train(args):
             optimizer=args.optimizer,
             up_mode=args.upsampling_mode,
             loss_fn=args.loss,
+            add_loss=args.add_loss,
         )
 
     """Checkpoint"""
