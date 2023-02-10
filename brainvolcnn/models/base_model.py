@@ -97,7 +97,7 @@ class BaseModel(_BaseLayer):
         val_loss = self.loss_fn(y_hat, y)
         self.log("val_loss", val_loss)
         for name, fn in self.add_loss.items():
-            self.log(f"train_{name}", fn(y_hat, y))
+            self.log(f"val_{name}", fn(y_hat, y))
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
