@@ -39,7 +39,7 @@ def default_parser():
     parser.add_argument(
         "--architecture",
         type=str,
-        choices=["resunet", "unet", "vnet"],
+        choices=["resunet", "unet"],
         default="resunet",
         help="Model architecture",
     )
@@ -66,6 +66,13 @@ def default_parser():
         type=int,
         default=47,
         help="Number of output channels, default=47",
+    )
+
+    parser.add_argument(
+        "--max_depth",
+        type=int,
+        default=5,
+        help="Maximum depth of encoder and decoder networks",
     )
 
     parser.add_argument(
@@ -219,6 +226,7 @@ def default_parser():
         args.unmask = False
 
     args._hparams = {
+        "max_depth": args.max_depth,
         "loss": args.loss,
         "optimizer": args.optimizer,
         "lr": args.lr,
