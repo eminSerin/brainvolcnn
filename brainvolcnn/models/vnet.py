@@ -1,17 +1,16 @@
-"""_summary_
-
-Returns
--------
-_type_
-    _description_
-"""
-
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
 
 from .base_model import BaseModel
-from .utils import _activation_fn, _BaseLayer, _nConv, _skip_add, _skip_concat
+from .utils import (
+    _activation_fn,
+    _BaseLayer,
+    _nConv,
+    _skip_add,
+    _skip_concat,
+    call_layer,
+)
 
 
 class InputLayer(_BaseLayer):
@@ -21,6 +20,7 @@ class InputLayer(_BaseLayer):
         self,
         *args,
         n_conv=1,
+        dims=3,
         padding=2,
         **kwargs,
     ) -> None:
@@ -29,6 +29,7 @@ class InputLayer(_BaseLayer):
             self.in_chans,
             self.out_chans,
             n_conv=n_conv,
+            dims=dims,
             kernel_size=5,
             padding=2,
             activation=self.activation,
@@ -46,7 +47,7 @@ class InputLayer(_BaseLayer):
 class Down(_BaseLayer):
     """Downsampling layer"""
 
-    def __init__(self, *args, padding=2, **kwargs) -> None:
+    def __init__(self, *args, padding=2, dims=3, **kwargs) -> None:
         super().__init__(*args, padding=padding, **kwargs)
         self.down_conv = _nConv(
             self.in_chans,
@@ -54,12 +55,14 @@ class Down(_BaseLayer):
             n_conv=1,
             kernel_size=2,
             stride=2,
+            dims=dims,
             activation=self.activation,
         )
         self.conv = _nConv(
             in_chans=self.out_chans,
             out_chans=self.out_chans,
             n_conv=self.n_conv,
+            dims=dims,
             activation=self.activation,
             kernel_size=5,
             padding=self.padding,
@@ -73,9 +76,9 @@ class Down(_BaseLayer):
 class Up(_BaseLayer):
     """Upsampling layer"""
 
-    def __init__(self, *args, padding=2, **kwargs) -> None:
+    def __init__(self, *args, padding=2, dims=3, **kwargs) -> None:
         super().__init__(*args, padding=padding, **kwargs)
-        self.up_conv = nn.ConvTranspose3d(
+        self.up_conv = call_layer("ConvTranspose", dims)(
             self.in_chans, self.out_chans // 2, kernel_size=2, stride=2
         )
         self.__activation_fn_up_conv = _activation_fn(
@@ -85,6 +88,7 @@ class Up(_BaseLayer):
             in_chans=self.out_chans,
             out_chans=self.out_chans,
             n_conv=self.n_conv,
+            dims=dims,
             activation=self.activation,
             kernel_size=self.kernel_size,
             padding=self.padding,
@@ -100,9 +104,9 @@ class Up(_BaseLayer):
 class OutputLayer(_BaseLayer):
     "Output layer."
 
-    def __init__(self, *args, kernel_size=1, **kwargs) -> None:
+    def __init__(self, *args, kernel_size=1, dims=3, **kwargs) -> None:
         super().__init__(*args, kernel_size=kernel_size, **kwargs)
-        self.conv = nn.Conv3d(
+        self.conv = call_layer("Conv", dims)(
             self.in_chans,
             self.out_chans,
             kernel_size=self.kernel_size,
@@ -113,7 +117,7 @@ class OutputLayer(_BaseLayer):
         return self.conv(x)
 
 
-class VNet(BaseModel):
+class _BaseVNet(BaseModel):
     """Implementation of VNet: Fully Convolutional Neural Networks for
     Volumetric Medical Image Segmentation
 
@@ -149,7 +153,8 @@ class VNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=3,
+        max_level=4,
+        dims=3,
         fdim=64,
         n_conv=None,
         kernel_size=5,
@@ -186,6 +191,7 @@ class VNet(BaseModel):
         self.input_layer = InputLayer(
             self.in_chans,
             out_chans=fdim,
+            dims=dims,
             activation=self.activation,
             padding=self.padding,
         )
@@ -199,6 +205,7 @@ class VNet(BaseModel):
                     self._features[i],
                     out_chans=self._features[i] * 2,
                     n_conv=self._n_convs[i],
+                    dims=dims,
                     activation=self.activation,
                     up_mode=self.up_mode,
                     padding=self.padding,
@@ -214,6 +221,7 @@ class VNet(BaseModel):
                     in_chans=up_dim,
                     out_chans=up_features[i],
                     n_conv=up_n_convs[i],
+                    dims=dims,
                     activation=self.activation,
                     up_mode=self.up_mode,
                     padding=self.padding,
@@ -223,7 +231,7 @@ class VNet(BaseModel):
         self.out_layer = OutputLayer(
             up_features[i],
             out_chans=self.out_chans,
-            activation=final_activation,
+            dims=dims,
             padding=self.padding,
             kernel_size=self.kernel_size,
         )
@@ -252,3 +260,33 @@ class VNet(BaseModel):
         for up, skip in zip(self.ups, skip_connections):
             x = up(x, skip)
         return self.out_layer(x)
+
+
+class VNet3D(_BaseVNet):
+    def __init__(
+        self,
+        *args,
+        dims=3,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            **kwargs,
+        )
+
+
+class VNet1D(_BaseVNet):
+    def __init__(
+        self,
+        *args,
+        dims=1,
+        up_mode="linear",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            up_mode=up_mode,
+            **kwargs,
+        )

@@ -4,10 +4,10 @@ import torch.nn.functional as F
 from torch import nn, optim
 
 from .base_model import BaseModel
-from .utils import _nConv, _skip_concat
+from .utils import _nConv, _skip_concat, call_layer
 
 
-class UNet(BaseModel):
+class _BaseUnet(BaseModel):
     """Implementation of U-Net: Convolutional Networks for Biomedical Image Segmentation[1].
 
     ![U-Net Architecture](./_imgs/u-net.png)
@@ -40,6 +40,7 @@ class UNet(BaseModel):
         in_chans,
         out_chans,
         max_level=5,
+        dims=3,
         fdim=64,
         n_conv=3,
         kernel_size=3,
@@ -70,23 +71,33 @@ class UNet(BaseModel):
             lr,
             **kwargs,
         )
+        self.dims = dims
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
-        self.pool = nn.MaxPool3d(kernel_size=2, stride=2)
+        self.pool = call_layer("MaxPool", dims)(kernel_size=2, stride=2)
 
         # Down
         in_dim = self.in_chans
         for feat in self._features:
-            self.downs.append(_nConv(in_dim, feat, n_conv=2))
+            self.downs.append(_nConv(in_dim, feat, n_conv=2, dims=dims))
             in_dim = feat
 
         self.bottleneck = _nConv(
-            feat, feat * 2, n_conv=2, kernel_size=self.kernel_size, padding=self.padding
+            feat,
+            feat * 2,
+            n_conv=2,
+            kernel_size=self.kernel_size,
+            padding=self.padding,
+            dims=dims,
         )
 
         # Up
         for feat in reversed(self._features):
-            self.ups.append(nn.ConvTranspose3d(feat * 2, feat, kernel_size=2, stride=2))
+            self.ups.append(
+                call_layer("ConvTranspose", dims)(
+                    feat * 2, feat, kernel_size=2, stride=2
+                )
+            )
             self.ups.append(
                 _nConv(
                     feat * 2,
@@ -94,10 +105,13 @@ class UNet(BaseModel):
                     n_conv=2,
                     kernel_size=self.kernel_size,
                     padding=self.padding,
+                    dims=dims,
                 )
             )
 
-        self.final_conv = nn.Sequential(nn.Conv3d(feat, self.out_chans, kernel_size=1))
+        self.final_conv = nn.Sequential(
+            call_layer("Conv", dims)(feat, self.out_chans, kernel_size=1)
+        )
 
     def forward(self, x):
         skip_connections = []
@@ -113,3 +127,33 @@ class UNet(BaseModel):
             sc = skip_connections[idx // 2]
             x = self.ups[idx + 1](_skip_concat(x, sc, mode=self.up_mode))
         return self.final_conv(x)
+
+
+class UNet1D(_BaseUnet):
+    def __init__(
+        self,
+        *args,
+        dims=1,
+        up_mode="linear",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            up_mode=up_mode,
+            **kwargs,
+        )
+
+
+class UNet3D(_BaseUnet):
+    def __init__(
+        self,
+        *args,
+        dims=3,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            **kwargs,
+        )

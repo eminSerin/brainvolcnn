@@ -17,6 +17,31 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def call_layer(layer, dims):
+    """Calls a layer with the specified dimensions
+
+    Parameters
+    ----------
+    layer : str
+        Layer name to call. Check `torch.nn` for more details.
+    dims : int
+        Dimensions of the layer.
+
+    Returns
+    -------
+    torch.nn
+        torch.nn layer
+
+    Raises
+    ------
+    ValueError
+        When dims is not 1, 2 or 3.
+    """
+    if not dims in [1, 2, 3]:
+        raise ValueError("Dimensions must be 1, 2 or 3")
+    return getattr(nn, f"{layer}{dims}d")
+
+
 class _BaseLayer(pl.LightningModule):
     """Base layer object for all layers used in
     the U-Net and V-Net architectures.
@@ -80,6 +105,7 @@ class _nConv(_BaseLayer):
         in_chans,
         out_chans,
         n_conv=None,
+        dims=3,
         kernel_size=3,
         padding=1,
         stride=1,
@@ -97,10 +123,11 @@ class _nConv(_BaseLayer):
             up_mode,
         )
         layers = []
+
         in_ch = self.in_chans
         for _ in range(n_conv):
             layers.append(
-                nn.Conv3d(
+                call_layer("Conv", dims)(
                     in_ch,
                     self.out_chans,
                     kernel_size=self.kernel_size,
@@ -108,7 +135,7 @@ class _nConv(_BaseLayer):
                     stride=self.stride,
                 )
             )
-            layers.append(nn.BatchNorm3d(self.out_chans))
+            layers.append(call_layer("BatchNorm", dims)(self.out_chans))
             layers.append(self._activation_fn)
             in_ch = self.out_chans
 

@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 
 import torch
 
+from brainvolcnn import models
 from brainvolcnn.losses.loss_metric import R2, MSELoss, PearsonCorr, RCLossAnneal
 
 
@@ -41,6 +42,14 @@ def default_parser():
         choices=["resunet", "unet", "vnet"],
         default="resunet",
         help="Model architecture",
+    )
+
+    parser.add_argument(
+        "--conv_dim",
+        type=int,
+        choices=[1, 3],
+        default=3,
+        help="Dimension of convolutional kernels, default=3",
     )
 
     parser.add_argument("--batch_size", type=int, default=6, help="Batch size")
@@ -121,7 +130,7 @@ def default_parser():
     parser.add_argument(
         "--upsampling_mode",
         type=str,
-        choices=["trilinear", "nearest"],
+        choices=["trilinear", "nearest", "linear"],
         default="trilinear",
         help="Upsampling mode, default=trilinear",
     )
@@ -254,15 +263,9 @@ def default_parser():
 
     # Architecture
     if args.architecture == "resunet":
-        from models.res_unet import ResUNet
-
-        args.architecture = ResUNet
+        args.architecture = getattr(models.resunet, f"ResUNet{args.conv_dim}D")
     elif args.architecture == "unet":
-        from models.unet import UNet
-
-        args.architecture = UNet
+        args.architecture = getattr(models.unet, f"UNet{args.conv_dim}D")
     elif args.architecture == "vnet":
-        from models.vnet import VNet
-
-        args.architecture = VNet
+        args.architecture = getattr(models.vnet, f"VNet{args.conv_dim}D")
     return args

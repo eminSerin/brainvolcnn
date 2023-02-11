@@ -115,6 +115,7 @@ def rc_loss(input, target, within_margin=0, between_margin=0):
 class MSELoss(nn.Module):
     def __init__(self, mask=None):
         super().__init__()
+        self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
 
@@ -130,6 +131,7 @@ class PearsonCorr(nn.Module):
     def __init__(self, loss=False, mask=None):
         super().__init__()
         self.loss = loss
+        self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
 
@@ -146,6 +148,7 @@ class R2(nn.Module):
     def __init__(self, loss=False, mask=None):
         super().__init__()
         self.loss = loss
+        self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
 
@@ -200,6 +203,7 @@ class RCLossAnneal(nn.Module):
         self.min_within_margin = min_within_margin
         self.max_between_margin = max_between_margin
         self.margin_anneal_step = margin_anneal_step
+        self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
         self.update_margins(epoch)

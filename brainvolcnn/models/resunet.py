@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import nn, optim
 
 from .base_model import BaseModel
-from .utils import _BaseLayer, _skip_add, _skip_concat
+from .utils import _BaseLayer, _skip_add, _skip_concat, call_layer
 
 
 class ResUnit(_BaseLayer):
@@ -19,6 +19,7 @@ class ResUnit(_BaseLayer):
         in_chans,
         out_chans,
         n_conv=2,
+        dims=3,
         kernel_size=3,
         padding=1,
         stride=1,
@@ -44,10 +45,10 @@ class ResUnit(_BaseLayer):
                 _stride = 2
             else:
                 _stride = self.stride
-            layers.append(nn.BatchNorm3d(in_ch))
+            layers.append(call_layer("BatchNorm", dims)(in_ch))
             layers.append(self._activation_fn)
             layers.append(
-                nn.Conv3d(
+                call_layer("Conv", dims)(
                     in_ch,
                     self.out_chans,
                     kernel_size=self.kernel_size,
@@ -68,6 +69,7 @@ class ResUnit(_BaseLayer):
             kernel_size=self.kernel_size,
             padding=self.padding,
             stride=_stride,
+            dims=dims,
         )
 
     def forward(self, x):
@@ -93,17 +95,19 @@ class _SkipConv(pl.LightningModule):
         Padding of the convolutional layer.
     """
 
-    def __init__(self, in_chans, out_chans, stride, kernel_size=3, padding=1) -> None:
+    def __init__(
+        self, in_chans, out_chans, stride, kernel_size=3, dims=3, padding=1
+    ) -> None:
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv3d(
+            call_layer("Conv", dims)(
                 in_chans,
                 out_chans,
                 kernel_size=kernel_size,
                 padding=padding,
                 stride=stride,
             ),
-            nn.BatchNorm3d(out_chans),
+            call_layer("BatchNorm", dims)(out_chans),
         )
 
     def forward(self, x):
@@ -113,9 +117,11 @@ class _SkipConv(pl.LightningModule):
 class _UpSample(pl.LightningModule):
     """Upsampling block."""
 
-    def __init__(self, in_chans, out_chans, kernel_size=3, stride=2, padding=1) -> None:
+    def __init__(
+        self, in_chans, out_chans, kernel_size=3, dims=3, stride=2, padding=1
+    ) -> None:
         super().__init__()
-        self.up = nn.ConvTranspose3d(
+        self.up = call_layer("ConvTranspose", dims)(
             in_channels=in_chans,
             out_channels=out_chans,
             kernel_size=kernel_size,
@@ -135,6 +141,7 @@ class _InputLayer(_BaseLayer):
         in_chans,
         out_chans,
         n_conv=None,
+        dims=3,
         kernel_size=3,
         padding=1,
         stride=1,
@@ -152,16 +159,16 @@ class _InputLayer(_BaseLayer):
             up_mode,
         )
         self.input_layer = nn.Sequential(
-            nn.Conv3d(
+            call_layer("Conv", dims)(
                 self.in_chans,
                 self.out_chans,
                 kernel_size=self.kernel_size,
                 padding=self.padding,
                 stride=2,
             ),
-            nn.BatchNorm3d(self.out_chans),
+            call_layer("BatchNorm", dims)(self.out_chans),
             self._activation_fn,
-            nn.Conv3d(
+            call_layer("Conv", dims)(
                 self.out_chans,
                 self.out_chans,
                 kernel_size=self.kernel_size,
@@ -174,6 +181,7 @@ class _InputLayer(_BaseLayer):
             kernel_size=self.kernel_size,
             padding=self.padding,
             stride=2,
+            dims=dims,
         )
 
     def forward(self, x):
@@ -182,7 +190,7 @@ class _InputLayer(_BaseLayer):
         return _skip_add(x, skip, mode=self.up_mode)
 
 
-class ResUNet(BaseModel):
+class _BaseResUNet(BaseModel):
     """ResUNet architecture.
 
     Deep-learning based segmentation model for 3D medical images, combining
@@ -203,6 +211,7 @@ class ResUNet(BaseModel):
         in_chans,
         out_chans,
         max_level=5,
+        dims=3,
         fdim=64,
         n_conv=2,
         kernel_size=3,
@@ -243,6 +252,7 @@ class ResUNet(BaseModel):
                 in_chans,
                 self._features[0],
                 kernel_size=kernel_size,
+                dims=dims,
                 padding=self.padding,
                 stride=self.stride,
                 activation=self.activation,
@@ -255,6 +265,7 @@ class ResUNet(BaseModel):
                     self._features[i - 1],
                     self._features[i],
                     kernel_size=kernel_size,
+                    dims=dims,
                     padding=self.padding,
                     stride=self.stride,
                     activation=self.activation,
@@ -271,6 +282,7 @@ class ResUNet(BaseModel):
                     up_features[i] + up_features[i + 1],
                     up_features[i + 1],
                     n_conv=self.n_conv,
+                    dims=dims,
                     kernel_size=self.kernel_size,
                     padding=self.padding,
                     stride=self.stride,
@@ -285,6 +297,7 @@ class ResUNet(BaseModel):
                     up_features[i],
                     kernel_size=self.kernel_size,
                     padding=self.padding,
+                    dims=dims,
                 )
             )
 
@@ -293,6 +306,7 @@ class ResUNet(BaseModel):
                 up_features[i + 1],
                 out_chans=self.out_chans,
                 kernel_size=self.kernel_size,
+                dims=dims,
                 padding=self.padding,
                 stride=2,
             ),
@@ -315,3 +329,33 @@ class ResUNet(BaseModel):
             x = up(x)
 
         return self.out_layer(x)
+
+
+class ResUNet1D(_BaseResUNet):
+    def __init__(
+        self,
+        *args,
+        dims=1,
+        up_mode="linear",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            up_mode=up_mode,
+            **kwargs,
+        )
+
+
+class ResUNet3D(_BaseResUNet):
+    def __init__(
+        self,
+        *args,
+        dims=3,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            **kwargs,
+        )
