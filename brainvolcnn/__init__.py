@@ -3,7 +3,7 @@ __all__ = [
     "predict",
     "utils",
     "models",
-    "data",
+    "datasets",
     "losses",
     "metrics",
     "callbacks",

@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from datasets.utils import MaskTensor
 from torchmetrics import functional as FM
-
-from brainvolcnn.datasets.utils import MaskTensor
 
 ##TODO: Add docstrings!
 
@@ -107,6 +107,52 @@ def rc_loss(input, target, within_margin=0, between_margin=0):
     return torch.clamp(recon_loss - within_margin, min=0.0) + torch.clamp(
         recon_loss - contrast_loss + between_margin, min=0.0
     )
+
+
+def contrastive_loss(input, target, within_margin=1, between_margin=0.0, alpha=0.5):
+    """Computes contrastive loss.
+
+    It computes within and between contrastive loss and combines them using alpha.
+    Within contrastive loss is computed as the mean of cosine similarity between input and target, while between contrastive loss is computed as the mean of cosine similarity between input and flipped target.
+
+    Parameters
+    ----------
+    input : torch.Tensor
+        Predicted values.
+    target : torch.Tensor
+        True values.
+    within_margin : int, optional
+        Ensure that within cosine similarity is below margin, by default 1
+    between_margin : float, optional
+        Ensure that between cosine similarity is above margin, by default 0.0
+    alpha : float, optional
+        Alpha to combine within and between loss. Specifically, alpha=1.0 is only within loss, while alpha=0 is between loss, by default 0.5
+
+    Returns
+    -------
+    torch.float
+        Contrastive loss.
+
+    Raises
+    ------
+    ValueError
+        Raise ValueError if input and target have different batch size.
+    ValueError
+        Raise ValueError if input and target have less than 2 samples.
+    """
+    # Compute contrastive loss using cosine similarity
+    if input.shape[0] != target.shape[0]:
+        raise ValueError("Input and target must have the same batch size")
+    if input.shape[0] < 2:
+        raise ValueError(
+            "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
+        )
+    within = F.cosine_similarity(input, target).mean()
+    between = F.cosine_similarity(input, torch.flip(target, dims=[0])).mean()
+    return (
+        torch.clamp(within_margin - within, min=0) * alpha
+        + torch.clamp(between - between_margin, min=0) * (1 - alpha)
+    ) * 2
 
 
 """OOP"""
@@ -237,3 +283,83 @@ class RCLossAnneal(nn.Module):
             within_margin=self.within_margin,
             between_margin=self.between_margin,
         )
+
+
+class ContrastiveLoss(nn.Module):
+    """Class for contrastive loss.
+
+    Also see brainvolcnn.losses.loss_metric.contrastive_loss
+    for more details.
+
+    Arguments
+    ----------
+    mask : torch.Tensor, optional
+        Mask tensor, by default None.
+    alpha : float, optional
+        Alpha value for combining within and between losses, by default 0.5
+    within_margin : float, optional
+        Within margin, by default 0.0
+    between_margin : float, optional
+        Between margin, by default 0.0
+    """
+
+    def __init__(self, mask=None, alpha=0.5, within_margin=0.0, between_margin=0.0):
+        super().__init__()
+        self.mask = mask
+        if mask is not None:
+            self.mask = MaskTensor(mask)
+        self.alpha = alpha
+        self.within_margin = within_margin
+        self.between_margin = between_margin
+
+    def forward(self, input, target):
+        if self.mask is not None:
+            return contrastive_loss()(
+                self.mask.apply_mask(input),
+                self.mask.apply_mask(target),
+                alpha=self.alpha,
+                within_margin=self.within_margin,
+                between_margin=self.between_margin,
+            )
+        return contrastive_loss(
+            input,
+            target,
+            alpha=self.alpha,
+            within_margin=self.within_margin,
+            between_margin=self.between_margin,
+        )
+
+
+class ContrastiveLossAnneal(ContrastiveLoss):
+    """Contrastive loss with annealing.
+
+    Inherits from ContrastiveLoss. See ContrastiveLoss for more details.
+    Despite ContrastiveLoss, this class has an additional parameter
+    called anneal_step. This parameter controls the number of epochs
+    required before the alpha value is annealed. During annealing the
+    alpha value is decreased by a factor of anneal_percent. The minimum
+    alpha value is defined by min_alpha.
+
+    Methods:
+    ----------
+    update_alpha(epoch):
+        Updates alpha value based on the current epoch.
+    """
+
+    def __init__(
+        self, epoch=0, anneal_step=20, anneal_percent=0.1, min_alpha=0.0, **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.epoch = epoch
+        self.anneal_step = anneal_step
+        self.min_alpha = min_alpha
+        self.anneal_percent = anneal_percent
+        self._mod = None
+
+    def update_alpha(self, epoch):
+        _mod = epoch % self.anneal_step
+        if _mod != 0 and _mod != self._mod:
+            self._mod = _mod
+            self.alpha = max(
+                self.alpha - self.alpha * self.anneal_percent, self.min_alpha
+            )

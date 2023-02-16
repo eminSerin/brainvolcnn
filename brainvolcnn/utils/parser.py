@@ -5,7 +5,14 @@ from argparse import ArgumentParser
 import torch
 
 from brainvolcnn import models
-from brainvolcnn.losses.loss_metric import R2, MSELoss, PearsonCorr, RCLossAnneal
+from brainvolcnn.losses.loss_metric import (
+    R2,
+    ContrastiveLoss,
+    ContrastiveLossAnneal,
+    MSELoss,
+    PearsonCorr,
+    RCLossAnneal,
+)
 
 
 def default_parser():
@@ -112,7 +119,7 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["rc", "mse"],
+        choices=["rc", "mse", "contrastive", "contrastive_anneal"],
         default="mse",
         help="Loss function, default=mse",
     )
@@ -197,10 +204,24 @@ def default_parser():
     )
 
     parser.add_argument(
-        "--margin_anneal_step",
+        "--anneal_step",
         type=int,
         default=10,
-        help="Step for annealing the margins",
+        help="Step for annealing loss function parameters",
+    )
+
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="Alpha weight for contrastive loss, default=0.5",
+    )
+
+    parser.add_argument(
+        "--min_alpha",
+        type=float,
+        default=0.0,
+        help="Minimum alpha weight for contrastive loss, default=0.0",
     )
 
     parser.add_argument(
@@ -226,6 +247,7 @@ def default_parser():
         args.unmask = False
 
     args._hparams = {
+        "conv_dim": args.conv_dim,
         "max_depth": args.max_depth,
         "loss": args.loss,
         "optimizer": args.optimizer,
@@ -233,6 +255,7 @@ def default_parser():
         "architecture": args.architecture,
         "activation": args.activation,
         "n_epochs": args.n_epochs,
+        "upsampling_mode": args.upsampling_mode,
     }
 
     # Loss
@@ -244,7 +267,25 @@ def default_parser():
             init_between_margin=args.init_across_subj_margin,
             min_within_margin=args.min_within_subj_margin,
             max_between_margin=args.max_across_subj_margin,
-            margin_anneal_step=args.margin_anneal_step,
+            margin_anneal_step=args.anneal_step,
+            mask=args.loss_mask,
+        )
+    elif args.loss == "contrastive":
+        args.loss = ContrastiveLoss(
+            alpha=args.alpha,
+            within_margin=args.within_subj_margin,
+            between_margin=args.across_subj_margin,
+            mask=args.loss_mask,
+        )
+    elif args.loss == "contrastive_anneal":
+        ## TODO: Add anneal percent for annealing. Not urgent.
+        args.loss = ContrastiveLossAnneal(
+            alpha=args.alpha,
+            min_alpha=args.min_alpha,
+            anneal_step=args.anneal_step,
+            within_margin=args.init_within_subj_margin,
+            between_margin=args.init_across_subj_margin,
+            margin_anneal_step=args.anneal_step,
             mask=args.loss_mask,
         )
     else:

@@ -1,8 +1,17 @@
 import torch.nn.functional as F
 from torch import optim
 
-# from losses.loss_metric import corrcoef, r2_score
-from brainvolcnn.losses.loss_metric import corrcoef, r2_score
+try:
+    from brainvolcnn.losses.loss_metric import corrcoef, r2_score
+except ImportError:
+    import os.path as op
+    import sys
+
+    path = op.abspath(op.join(op.dirname(__file__), op.join("..", "..")))
+    if path not in sys.path:
+        sys.path.append(path)
+    del sys, path
+    from losses.loss_metric import corrcoef, r2_score
 
 from .utils import _activation_fn, _BaseLayer
 
