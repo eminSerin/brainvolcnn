@@ -273,8 +273,6 @@ def default_parser():
     elif args.loss == "contrastive":
         args.loss = ContrastiveLoss(
             alpha=args.alpha,
-            within_margin=args.within_subj_margin,
-            between_margin=args.across_subj_margin,
             mask=args.loss_mask,
         )
     elif args.loss == "contrastive_anneal":
