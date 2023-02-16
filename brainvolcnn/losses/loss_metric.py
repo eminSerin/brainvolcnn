@@ -298,12 +298,12 @@ class ContrastiveLoss(nn.Module):
     alpha : float, optional
         Alpha value for combining within and between losses, by default 0.5
     within_margin : float, optional
-        Within margin, by default 0.0
+        Within margin, by default 1.0
     between_margin : float, optional
         Between margin, by default 0.0
     """
 
-    def __init__(self, mask=None, alpha=0.5, within_margin=0.0, between_margin=0.0):
+    def __init__(self, mask=None, alpha=0.5, within_margin=1.0, between_margin=0.0):
         super().__init__()
         self.mask = mask
         if mask is not None:
