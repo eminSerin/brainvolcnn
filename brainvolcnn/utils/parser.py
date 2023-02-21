@@ -303,7 +303,7 @@ def default_parser():
 
     # Version
     if args.ver is None:
-        args.ver = f"{args.architecture}_{args.lr}_{args.loss}_{args.optimizer}_{args.activation}"
+        args.ver = f"{args.architecture}_{args.n_conv_layers}_{args.lr}_{args.loss}_{args.optimizer}_{args.activation}"
 
     # Optimizer
     if args.optimizer == "adam":
