@@ -75,17 +75,19 @@ class _BaseUnet(BaseModel):
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
         self.pool = call_layer("MaxPool", dims)(kernel_size=2, stride=2)
+        if n_conv is None:
+            self.n_conv = 3
 
         # Down
         in_dim = self.in_chans
         for feat in self._features:
-            self.downs.append(_nConv(in_dim, feat, n_conv=2, dims=dims))
+            self.downs.append(_nConv(in_dim, feat, n_conv=self.n_conv, dims=dims))
             in_dim = feat
 
         self.bottleneck = _nConv(
             feat,
             feat * 2,
-            n_conv=2,
+            n_conv=self.n_conv,
             kernel_size=self.kernel_size,
             padding=self.padding,
             dims=dims,
@@ -102,7 +104,7 @@ class _BaseUnet(BaseModel):
                 _nConv(
                     feat * 2,
                     feat,
-                    n_conv=2,
+                    n_conv=self.n_conv,
                     kernel_size=self.kernel_size,
                     padding=self.padding,
                     dims=dims,

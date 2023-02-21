@@ -97,6 +97,7 @@ def train(args):
             loss_fn=args.loss,
             add_loss=args.add_loss,
             max_level=args.max_depth,
+            n_conv=args.n_conv_layers,
         )
     else:
         model = args.architecture(
@@ -110,6 +111,7 @@ def train(args):
             loss_fn=args.loss,
             add_loss=args.add_loss,
             max_level=args.max_depth,
+            n_conv=args.n_conv_layers,
         )
 
     """Checkpoint"""

@@ -38,6 +38,8 @@ class ResUnit(_BaseLayer):
             up_mode,
         )
         self.downsample = downsample
+        if n_conv is None:
+            self.n_conv = 2
         layers = []
         in_ch = self.in_chans
         for i in range(self.n_conv):
@@ -271,6 +273,7 @@ class _BaseResUNet(BaseModel):
                     activation=self.activation,
                     up_mode=self.up_mode,
                     downsample=True,
+                    n_conv=self.n_conv,
                 )
             )
 

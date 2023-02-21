@@ -59,6 +59,12 @@ def default_parser():
         help="Dimension of convolutional kernels, default=3",
     )
 
+    parser.add_argument(
+        "--n_conv_layers",
+        type=int,
+        help="Number of convolutional layers in each block",
+    )
+
     parser.add_argument("--batch_size", type=int, default=6, help="Batch size")
 
     parser.add_argument(
@@ -256,6 +262,7 @@ def default_parser():
         "activation": args.activation,
         "n_epochs": args.n_epochs,
         "upsampling_mode": args.upsampling_mode,
+        "n_conv_layers": args.n_conv_layers,
     }
 
     # Loss
