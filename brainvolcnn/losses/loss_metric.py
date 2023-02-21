@@ -158,19 +158,40 @@ def contrastive_loss(input, target, within_margin=1, between_margin=0.0, alpha=0
 """OOP"""
 
 
-class MSELoss(nn.Module):
-    def __init__(self, mask=None):
+class BaseLoss(nn.Module):
+    def __init__(self, mask=None, loss_fn=None):
         super().__init__()
         self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
+        self.loss_fn = loss_fn
 
     def forward(self, input, target):
         if self.mask is not None:
-            return nn.functional.mse_loss(
+            return self.loss_fn(
                 self.mask.apply_mask(input), self.mask.apply_mask(target)
             )
-        return nn.functional.mse_loss(input, target)
+        return self.loss_fn(input, target)
+
+
+class MSELoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=nn.functional.mse_loss)
+
+
+class MAELoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=nn.functional.l1_loss)
+
+
+class HuberLoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=nn.functional.huber_loss)
+
+
+class MSLELoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=FM.mean_squared_log_error)
 
 
 class PearsonCorr(nn.Module):
