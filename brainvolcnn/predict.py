@@ -35,6 +35,7 @@ def predict(args):
     if args.checkpoint_file is None:
         raise ValueError("Must provide a checkpoint to load!")
     model = args.architecture.load_from_checkpoint(
+        args.checkpoint_file,
         in_chans=args.n_channels,
         out_chans=args.n_out_channels,
         fdim=args.fdim,
