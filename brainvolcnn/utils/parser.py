@@ -9,7 +9,10 @@ from brainvolcnn.losses.loss_metric import (
     R2,
     ContrastiveLoss,
     ContrastiveLossAnneal,
+    HuberLoss,
+    MAELoss,
     MSELoss,
+    MSLELoss,
     PearsonCorr,
     RCLossAnneal,
 )
@@ -268,6 +271,12 @@ def default_parser():
     # Loss
     if args.loss == "mse":
         args.loss = MSELoss(mask=args.loss_mask)
+    elif args.loss == "msle":
+        args.loss = MSLELoss(mask=args.loss_mask)
+    elif args.loss == "mae":
+        args.loss = MAELoss(mask=args.loss_mask)
+    elif args.loss == "huber":
+        args.loss = HuberLoss(mask=args.loss_mask)
     elif args.loss == "rc":
         args.loss = RCLossAnneal(
             init_within_margin=args.init_within_subj_margin,
