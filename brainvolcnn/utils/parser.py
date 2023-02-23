@@ -128,7 +128,15 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["rc", "mse", "contrastive", "contrastive_anneal"],
+        choices=[
+            "rc",
+            "mse",
+            "contrastive",
+            "contrastive_anneal",
+            "mae",
+            "msle",
+            "huber",
+        ],
         default="mse",
         help="Loss function, default=mse",
     )
