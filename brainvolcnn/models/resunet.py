@@ -159,6 +159,7 @@ class _BaseResUNet(BaseModel):
                     n_conv=self.n_conv,
                 )
             )
+            in_dim = feat
 
         # Bottleneck
         self.bottleneck = ResUnit(

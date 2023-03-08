@@ -153,7 +153,7 @@ class _BaseVNet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=4,
+        max_level=2,
         dims=3,
         fdim=64,
         n_conv=None,
