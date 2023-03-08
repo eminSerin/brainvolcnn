@@ -34,9 +34,15 @@ def default_parser():
     )
 
     parser.add_argument(
-        "--subj_list",
+        "--train_list",
         type=str,
-        help="File containing the subject ID list, one subject ID on each line",
+        help="File containing the train subject ID list, one subject ID on each line",
+    )
+
+    parser.add_argument(
+        "--val_list",
+        type=str,
+        help="File containing the validation subject ID list, one subject ID on each line",
     )
 
     parser.add_argument(
@@ -190,7 +196,7 @@ def default_parser():
         "--val_percent",
         type=float,
         default=0.1,
-        help="Percent of training data for validation",
+        help="Percent of training data for validation. This is only used if val_list is not provided",
     )
 
     parser.add_argument(

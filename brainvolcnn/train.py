@@ -39,10 +39,13 @@ def train(args):
         os.makedirs(args.working_dir)
 
     """Load Data"""
-    subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
-    train_ids, val_ids = train_test_split(
-        subj_ids, test_size=args.val_percent, random_state=args.seed
-    )
+    train_ids = np.genfromtxt(args.train_list, dtype=int, delimiter=",")
+    if args.val_list is not None:
+        val_ids = np.genfromtxt(args.val_list, dtype=int, delimiter=",")
+    else:
+        train_ids, val_ids = train_test_split(
+            train_ids, test_size=args.val_percent, random_state=args.seed
+        )
 
     unmask = False
     if args.mask is not None:
