@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch import nn, optim
 
 from .base_model import BaseModel
-from .utils import _nConv, _skip_concat, call_layer
+from .utils import _interpolate, _nConv, _skip_concat, call_layer
 
 
 class _BaseUnet(BaseModel):
@@ -19,7 +19,7 @@ class _BaseUnet(BaseModel):
     out_channel : int
         Number of output channels.
     max_level : int, optional
-        Maximum level of downstream and upstreams, by default 5
+        Maximum level of hidden downstream and upstreams blocks, excluding input, output and bottleneck blocks, by default 3.
     fdim : int, optional
         Initial number of features, by default 64.
         In each level, the number of features is doubled.
@@ -39,7 +39,7 @@ class _BaseUnet(BaseModel):
         self,
         in_chans,
         out_chans,
-        max_level=5,
+        max_level=3,
         dims=3,
         fdim=64,
         n_conv=3,
@@ -75,15 +75,36 @@ class _BaseUnet(BaseModel):
         self.downs = nn.ModuleList()
         self.ups = nn.ModuleList()
         self.pool = call_layer("MaxPool", dims)(kernel_size=2, stride=2)
-        if n_conv is None:
-            self.n_conv = 3
+        self.upscale = nn.ModuleList()
+
+        # Input block
+        self.in_block = _nConv(
+            self.in_chans,
+            self.fdim,
+            n_conv=self.n_conv,
+            dims=dims,
+            kernel_size=self.kernel_size,
+            padding=self.padding,
+            activation=self.activation,
+        )
 
         # Down
-        in_dim = self.in_chans
-        for feat in self._features:
-            self.downs.append(_nConv(in_dim, feat, n_conv=self.n_conv, dims=dims))
+        in_dim = self._features[0]
+        for feat in self._features[1:]:
+            self.downs.append(
+                _nConv(
+                    in_dim,
+                    feat,
+                    n_conv=self.n_conv,
+                    dims=dims,
+                    kernel_size=self.kernel_size,
+                    padding=self.padding,
+                    activation=self.activation,
+                )
+            )
             in_dim = feat
 
+        # Bottleneck
         self.bottleneck = _nConv(
             feat,
             feat * 2,
@@ -91,15 +112,19 @@ class _BaseUnet(BaseModel):
             kernel_size=self.kernel_size,
             padding=self.padding,
             dims=dims,
+            activation=self.activation,
         )
 
-        # Up
+        # Upscale blocks
         for feat in reversed(self._features):
-            self.ups.append(
+            self.upscale.append(
                 call_layer("ConvTranspose", dims)(
-                    feat * 2, feat, kernel_size=2, stride=2
+                    feat * 2, feat, kernel_size=self.kernel_size, stride=2
                 )
             )
+
+        # Ups
+        for feat in reversed(self._features[1:]):
             self.ups.append(
                 _nConv(
                     feat * 2,
@@ -108,27 +133,44 @@ class _BaseUnet(BaseModel):
                     kernel_size=self.kernel_size,
                     padding=self.padding,
                     dims=dims,
+                    activation=self.activation,
                 )
             )
 
-        self.final_conv = nn.Sequential(
-            call_layer("Conv", dims)(feat, self.out_chans, kernel_size=1)
+        # Final block
+        self.out_block = nn.Sequential(
+            _nConv(
+                feat,
+                self.fdim,
+                n_conv=self.n_conv,
+                dims=dims,
+                kernel_size=self.kernel_size,
+                padding=self.padding,
+                activation=self.activation,
+            ),
+            call_layer("Conv", dims)(self.fdim, self.out_chans, kernel_size=1),
         )
 
     def forward(self, x):
+        in_shape = x.shape
         skip_connections = []
+        x = self.in_block(x)
+        skip_connections.append(x)
         for down in self.downs:
-            x = down(x)
+            x = down(self.pool(x))
             skip_connections.append(x)
-            x = self.pool(x)
-        x = self.bottleneck(x)
+        x = self.bottleneck(self.pool(x))
         skip_connections = skip_connections[::-1]
 
-        for idx in range(0, len(self.ups), 2):
-            x = self.ups[idx](x)
-            sc = skip_connections[idx // 2]
-            x = self.ups[idx + 1](_skip_concat(x, sc, mode=self.up_mode))
-        return self.final_conv(x)
+        for up, scale, skip in zip(self.ups, self.upscale, skip_connections):
+            x = up(_skip_concat(scale(x), skip, mode=self.up_mode))
+
+        x = self.out_block(
+            _skip_concat(self.upscale[-1](x), skip_connections[-1], mode=self.up_mode)
+        )
+        if x.shape[2:] != in_shape[2:]:
+            return _interpolate(x, in_shape[2:], mode=self.up_mode)
+        return x
 
 
 class UNet1D(_BaseUnet):

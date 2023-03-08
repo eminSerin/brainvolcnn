@@ -26,7 +26,7 @@ class BaseModel(_BaseLayer):
     out_channels : int
         Number of output channels.
     max_level : int
-        Maximum number of downsampling and upsampling levels.
+        Maximum number of downsampling and upsampling levels except input, output and bottleneck layers.
     fdim : int, optional
         Number of features in the first convolutional layer,
         by default 64.
@@ -87,7 +87,7 @@ class BaseModel(_BaseLayer):
         self.add_loss = add_loss
         self.optimizer = optimizer
         self.lr = lr
-        self._features = [fdim * 2**i for i in range(max_level)]
+        self._features = [fdim * 2**i for i in range(max_level + 1)]
         if final_activation is not None:
             self.final_activation = _activation_fn(final_activation, self.out_chans)
 

@@ -65,6 +65,7 @@ def default_parser():
     parser.add_argument(
         "--n_conv_layers",
         type=int,
+        default=3,
         help="Number of convolutional layers in each block",
     )
 

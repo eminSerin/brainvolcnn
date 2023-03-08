@@ -109,7 +109,7 @@ class _nConv(_BaseLayer):
         kernel_size=3,
         padding=1,
         stride=1,
-        activation="relu",
+        activation="relu_inplace",
         up_mode="trilinear",
     ) -> None:
         super().__init__(
@@ -193,12 +193,12 @@ def _skip_add(x, skip, mode="trilinear"):
     return torch.add(x, skip)
 
 
-def _interpolate(X, size, mode="trilinear", align_corners=None):
+def _interpolate(x, size, mode="trilinear", align_corners=None):
     """_summary_
 
     Parameters
     ----------
-    X : torch.Tensor
+    x : torch.Tensor
         Input tensor.
     size : tuple
         Tuple of target size.
@@ -218,7 +218,7 @@ def _interpolate(X, size, mode="trilinear", align_corners=None):
         align_corners = None
     else:
         align_corners = True
-    return F.interpolate(X, size=size, mode=mode, align_corners=align_corners)
+    return F.interpolate(x, size=size, mode=mode, align_corners=align_corners)
 
 
 def _activation_fn(activation="relu_inplace", n_channels=None):
