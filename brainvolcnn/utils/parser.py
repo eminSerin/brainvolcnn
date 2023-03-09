@@ -46,6 +46,12 @@ def default_parser():
     )
 
     parser.add_argument(
+        "--test_list",
+        type=str,
+        help="File containing the test subject ID list, one subject ID on each line",
+    )
+
+    parser.add_argument(
         "--n_samples_per_subj",
         type=int,
         default=8,

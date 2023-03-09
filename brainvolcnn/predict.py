@@ -29,7 +29,7 @@ def predict(args):
         os.makedirs(args.working_dir)
 
     """Load Datalist"""
-    subj_ids = np.genfromtxt(args.subj_list, dtype=int, delimiter=",")
+    subj_ids = np.genfromtxt(args.test_list, dtype=int, delimiter=",")
 
     """Init Model"""
     if args.checkpoint_file is None:
