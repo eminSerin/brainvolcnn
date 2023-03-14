@@ -293,8 +293,8 @@ class RCLossAnneal(nn.Module):
     def forward(self, input, target):
         if self.mask is not None:
             return rc_loss(
-                self.masker.apply_mask(input),
-                self.masker.apply_mask(target),
+                self.mask.apply_mask(input),
+                self.mask.apply_mask(target),
                 within_margin=self.within_margin,
                 between_margin=self.between_margin,
             )
