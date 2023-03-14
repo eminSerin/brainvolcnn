@@ -319,7 +319,7 @@ def default_parser():
             min_alpha=args.min_alpha,
             within_margin=args.init_within_subj_margin,
             between_margin=args.init_across_subj_margin,
-            margin_anneal_step=args.anneal_step,
+            anneal_step=args.anneal_step,
             mask=args.loss_mask,
         )
     else:

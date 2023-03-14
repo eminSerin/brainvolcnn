@@ -335,7 +335,7 @@ class ContrastiveLoss(nn.Module):
 
     def forward(self, input, target):
         if self.mask is not None:
-            return contrastive_loss()(
+            return contrastive_loss(
                 self.mask.apply_mask(input),
                 self.mask.apply_mask(target),
                 alpha=self.alpha,
