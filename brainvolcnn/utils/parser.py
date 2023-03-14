@@ -317,7 +317,6 @@ def default_parser():
         args.loss = ContrastiveLossAnneal(
             alpha=args.alpha,
             min_alpha=args.min_alpha,
-            anneal_step=args.anneal_step,
             within_margin=args.init_within_subj_margin,
             between_margin=args.init_across_subj_margin,
             margin_anneal_step=args.anneal_step,
