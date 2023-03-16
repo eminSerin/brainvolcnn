@@ -124,6 +124,7 @@ def train(args):
         filename="best_loss",
         save_top_k=1,
         mode="min",
+        save_last=True,
     )
     checkpoint_callback_r2 = ModelCheckpoint(
         monitor="val_r2",
