@@ -38,31 +38,6 @@ def dice_auc(input, target):
     raise NotImplementedError
 
 
-def _batch_mse(input, target):
-    """Computes the mean squared error between two tensors.
-
-    Parameters
-    ----------
-    input : _type_
-        _description_
-    target : _type_
-        _description_
-
-    Returns
-    -------
-    _type_
-        _description_
-
-    Raises
-    ------
-    ValueError
-        _description_
-    """
-    if input.shape != target.shape:
-        raise ValueError("Input and target shapes must match!")
-    return torch.mean((input.flatten(1) - target.flatten(1)) ** 2, dim=-1)
-
-
 def _rc_loss_fn(input, target):
     """Computes the Reconstruction and Contrastive Losses.
 
@@ -73,11 +48,9 @@ def _rc_loss_fn(input, target):
             "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
         )
 
-    # Reconstruction loss (i.e., MSE)
-    recon_loss = _batch_mse(input, target)
-    # Contrastive loss
-    contrast_loss = _batch_mse(input, torch.flip(target, dims=[0]))
-    return torch.mean(recon_loss), torch.mean(contrast_loss)
+    return FM.mean_squared_error(input, target), FM.mean_squared_error(
+        input, torch.flip(target, dims=[0])
+    )
 
 
 def rc_loss(input, target, within_margin=0, between_margin=0):
@@ -257,10 +230,10 @@ class RCLossAnneal(nn.Module):
     def __init__(
         self,
         epoch=0,
-        init_within_margin=0.5,
-        init_between_margin=0.5,
-        min_within_margin=0.01,
-        max_between_margin=1,
+        init_within_margin=4.0,
+        init_between_margin=5,
+        min_within_margin=1.0,
+        max_between_margin=10,
         margin_anneal_step=10,
         mask=None,
     ):
@@ -270,25 +243,45 @@ class RCLossAnneal(nn.Module):
         self.min_within_margin = min_within_margin
         self.max_between_margin = max_between_margin
         self.margin_anneal_step = margin_anneal_step
+        self.within_margin = init_within_margin
+        self.between_margin = init_between_margin
         self.mask = mask
+        self._mod = None
         if mask is not None:
             self.mask = MaskTensor(mask)
         self.update_margins(epoch)
 
+    # def update_margins(self, epoch):
+    #     """Updates margins based on the current epoch."""
+    #     self.within_margin = np.max(
+    #         [
+    #             self.init_within_margin * 0.5 ** (epoch // self.margin_anneal_step),
+    #             self.min_within_margin,
+    #         ]
+    #     )
+    #     self.between_margin = np.min(
+    #         [
+    #             self.init_between_margin * 2.0 ** (epoch // self.margin_anneal_step),
+    #             self.max_between_margin,
+    #         ],
+    #     )
+
     def update_margins(self, epoch):
-        """Updates margins based on the current epoch."""
-        self.within_margin = np.max(
-            [
-                self.init_within_margin * 0.5 ** (epoch // self.margin_anneal_step),
-                self.min_within_margin,
-            ]
-        )
-        self.between_margin = np.min(
-            [
-                self.init_between_margin * 2.0 ** (epoch // self.margin_anneal_step),
-                self.max_between_margin,
-            ],
-        )
+        _mod = epoch % self.anneal_step
+        if _mod != 0 and _mod != self._mod:
+            self._mod = _mod
+            self.within_margin = np.max(
+                [
+                    self.within_margin - self.within_margin * 0.1,
+                    self.min_within_margin,
+                ]
+            )
+            self.between_margin = np.min(
+                [
+                    self.between_margin + self.between_margin * 0.1,
+                    self.max_between_margin,
+                ],
+            )
 
     def forward(self, input, target):
         if self.mask is not None:
