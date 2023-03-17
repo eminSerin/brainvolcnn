@@ -246,7 +246,6 @@ class RCLossAnneal(nn.Module):
         self.within_margin = init_within_margin
         self.between_margin = init_between_margin
         self.mask = mask
-        self._mod = None
         if mask is not None:
             self.mask = MaskTensor(mask)
         self.update_margins(epoch)
@@ -267,9 +266,7 @@ class RCLossAnneal(nn.Module):
     #     )
 
     def update_margins(self, epoch):
-        _mod = epoch % self.anneal_step
-        if _mod != 0 and _mod != self._mod:
-            self._mod = _mod
+        if (epoch % self.margin_anneal_step == 0) & (epoch > 0):
             self.within_margin = np.max(
                 [
                     self.within_margin - self.within_margin * 0.1,
