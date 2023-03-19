@@ -201,3 +201,83 @@ class UNet3D(_BaseUnet):
             dims=dims,
             **kwargs,
         )
+
+
+"""Minimal UNet implementation for 2D and 3D images.
+It is a simplified version of the UNet implementation, which 
+uses nn.Upsample instead of nn.ConvTranspose2d/3d. It has less
+parameters."""
+
+
+class _UNetMinimal(_BaseUnet):
+    def __init__(
+        self,
+        in_chans,
+        out_chans,
+        max_level=3,
+        dims=3,
+        fdim=64,
+        n_conv=3,
+        kernel_size=3,
+        padding=1,
+        stride=1,
+        activation="relu_inplace",
+        up_mode="trilinear",
+        final_activation=None,
+        loss_fn=F.mse_loss,
+        optimizer=optim.Adam,
+        lr=0.001,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            in_chans,
+            out_chans,
+            max_level,
+            dims,
+            fdim,
+            n_conv,
+            kernel_size,
+            padding,
+            stride,
+            activation,
+            up_mode,
+            final_activation,
+            loss_fn,
+            optimizer,
+            lr,
+            **kwargs,
+        )
+        for _ in reversed(self._features):
+            self.upscale.append(
+                nn.Upsample(scale_factor=2, mode=self.up_mode, align_corners=True)
+            )
+
+
+class UNet2DMinimal(_UNetMinimal):
+    def __init__(
+        self,
+        *args,
+        dims=2,
+        up_mode="bilinear",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            up_mode=up_mode,
+            **kwargs,
+        )
+
+
+class UNet3DMinimal(_UNetMinimal):
+    def __init__(
+        self,
+        *args,
+        dims=3,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            dims=dims,
+            **kwargs,
+        )

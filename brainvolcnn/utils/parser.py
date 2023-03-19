@@ -349,6 +349,8 @@ def default_parser():
         args.architecture = getattr(models.resunet, f"ResUNet{args.conv_dim}D")
     elif args.architecture == "unet":
         args.architecture = getattr(models.unet, f"UNet{args.conv_dim}D")
+    elif args.architecture == "unetminimal":
+        args.architecture = getattr(models.unet, f"UNetMinimal{args.conv_dim}D")
     elif args.architecture == "vnet":
         args.architecture = getattr(models.vnet, f"VNet{args.conv_dim}D")
     return args
