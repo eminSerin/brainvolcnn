@@ -61,7 +61,7 @@ def default_parser():
     parser.add_argument(
         "--architecture",
         type=str,
-        choices=["resunet", "unet"],
+        choices=["resunet", "unet", "unetminimal"],
         default="resunet",
         help="Model architecture",
     )
