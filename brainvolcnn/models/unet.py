@@ -247,10 +247,41 @@ class _UNetMinimal(_BaseUnet):
             lr,
             **kwargs,
         )
+        # Upscale blocks
+        self.upscale = nn.ModuleList()
         for _ in reversed(self._features):
             self.upscale.append(
                 nn.Upsample(scale_factor=2, mode=self.up_mode, align_corners=True)
             )
+        # self.upscale(call_layer("MaxUnpool", dims)(kernel_size=2, stride=2))
+
+        # Ups
+        self.ups = nn.ModuleList()
+        for feat in reversed(self._features[1:]):
+            self.ups.append(
+                nn.Sequential(
+                    _nConv(
+                        feat * 2 + feat,
+                        feat,
+                        n_conv=self.n_conv,
+                        kernel_size=self.kernel_size,
+                        padding=self.padding,
+                        dims=dims,
+                        activation=self.activation,
+                    ),
+                    # nn.Dropout(0.1, inplace=True),
+                )
+            )
+
+        self.out_block[0] = _nConv(
+            feat + self.fdim,
+            self.fdim,
+            n_conv=self.n_conv,
+            dims=dims,
+            kernel_size=self.kernel_size,
+            padding=self.padding,
+            activation=self.activation,
+        )
 
 
 class UNet2DMinimal(_UNetMinimal):
