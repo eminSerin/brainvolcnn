@@ -95,9 +95,14 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
+        # Logging
+        # self.logger.experiment.add_histogram(
+        #     "predicted_target_variance", y_hat.std(dim=0).flatten()
+        # )
         self.log("train_loss", loss)
         for name, fn in self.add_loss.items():
             self.log(f"train_{name}", fn(y_hat, y))
+
         return loss
 
     def validation_step(self, batch, batch_idx):

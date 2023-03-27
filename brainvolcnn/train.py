@@ -1,5 +1,6 @@
 import os
 import os.path as op
+import sys
 
 import numpy as np
 import pytorch_lightning as pl
@@ -10,22 +11,18 @@ from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
-try:
-    from brainvolcnn.callbacks.callbacks import RCLossMarginTune
-    from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
-    from brainvolcnn.losses.loss_metric import RCLossAnneal
-    from brainvolcnn.utils.parser import default_parser
-except ImportError:
-    import sys
-
-    path = op.abspath(op.join(op.dirname(__file__), ".."))
-    if path not in sys.path:
-        sys.path.append(path)
-    del sys, path
-    from brainvolcnn.callbacks.callbacks import RCLossMarginTune
-    from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
-    from brainvolcnn.losses.loss_metric import RCLossAnneal
-    from brainvolcnn.utils.parser import default_parser
+path = op.abspath(op.join(op.dirname(__file__), ".."))
+if path not in sys.path:
+    sys.path.append(path)
+del sys, path
+from brainvolcnn.callbacks.callbacks import (  # LogPredictionVariance,
+    LogGradients,
+    LogParameters,
+    RCLossMarginTune,
+)
+from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
+from brainvolcnn.losses.loss_metric import RCLossAnneal
+from brainvolcnn.utils.parser import default_parser
 
 
 def train(args):
@@ -133,11 +130,19 @@ def train(args):
         save_top_k=1,
         mode="max",
     )
-    callbacks = [checkpoint_callback_loss, checkpoint_callback_r2]
+    callbacks = [
+        checkpoint_callback_loss,
+        checkpoint_callback_r2,
+        LogGradients(),
+        LogParameters(),
+        # LogPredictionVariance(),
+    ]
 
     # Logger
     if args.logger == "tensorboard":
-        logger = TensorBoardLogger(args.working_dir, name="logs", version=args.ver)
+        logger = TensorBoardLogger(
+            args.working_dir, name="logs", version=args.ver, default_hp_metric=False
+        )
     elif args.logger == "neptune":
         logger = NeptuneLogger(
             project_name="task-generation/brainvolcnn",
@@ -159,6 +164,8 @@ def train(args):
         default_root_dir=args.working_dir,
         callbacks=callbacks,
         logger=logger,
+        # limit_train_batches=1,
+        # limit_val_batches=1,
     )
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
