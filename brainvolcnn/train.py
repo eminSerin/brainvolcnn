@@ -6,7 +6,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.loggers.neptune import NeptuneLogger
+from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
@@ -143,14 +143,14 @@ def train(args):
         logger = TensorBoardLogger(
             args.working_dir, name="logs", version=args.ver, default_hp_metric=False
         )
-    elif args.logger == "neptune":
-        logger = NeptuneLogger(
-            project_name="task-generation/brainvolcnn",
-            experiment_name=args.ver,
-            log_model_checkpoints=False,
-            tags=["training", args.architecture.__name__],
+    elif args.logger == "wandb":
+        logger = WandbLogger(
+            name=args.ver,
+            project="brainvolcnn",
+            config=args._hparams,
+            save_dir=args.working_dir,
         )
-        logger.log_model_summary(model=model, max_depth=-1)
+        logger.watch(model, log="all", log_freq=100)
     logger.log_hyperparams(args._hparams)
 
     """Train Model"""

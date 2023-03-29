@@ -287,9 +287,12 @@ def default_parser():
         "n_epochs": args.n_epochs,
         "upsampling_mode": args.upsampling_mode,
         "n_conv_layers": args.n_conv_layers,
+        "fdim": args.fdim,
+        "loss_mask": False if args.loss_mask is not None else True,
     }
 
     # Loss
+    _loss = args.loss
     if args.loss == "mse":
         args.loss = MSELoss(mask=args.loss_mask)
     elif args.loss == "msle":
@@ -299,6 +302,11 @@ def default_parser():
     elif args.loss == "huber":
         args.loss = HuberLoss(mask=args.loss_mask)
     elif args.loss == "rc":
+        args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
+        args._hparams["init_across_subj_margin"] = args.init_across_subj_margin
+        args._hparams["min_within_subj_margin"] = args.min_within_subj_margin
+        args._hparams["max_across_subj_margin"] = args.max_across_subj_margin
+        args._hparams["anneal_step"] = args.anneal_step
         args.loss = RCLossAnneal(
             init_within_margin=args.init_within_subj_margin,
             init_between_margin=args.init_across_subj_margin,
@@ -308,11 +316,17 @@ def default_parser():
             mask=args.loss_mask,
         )
     elif args.loss == "contrastive":
+        args._hparams["alpha"] = args.alpha
         args.loss = ContrastiveLoss(
             alpha=args.alpha,
             mask=args.loss_mask,
         )
     elif args.loss == "contrastive_anneal":
+        args._hparams["alpha"] = args.alpha
+        args._hparams["min_alpha"] = args.min_alpha
+        args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
+        args._hparams["init_across_subj_margin"] = args.init_across_subj_margin
+        args._hparams["anneal_step"] = args.anneal_step
         ## TODO: Add anneal percent for annealing. Not urgent.
         args.loss = ContrastiveLossAnneal(
             alpha=args.alpha,
@@ -332,7 +346,7 @@ def default_parser():
 
     # Version
     if args.ver is None:
-        args.ver = f"{args.architecture}_{args.n_conv_layers}_{args.lr}_{args.loss}_{args.optimizer}_{args.activation}"
+        args.ver = f"{args.architecture}_{args.n_conv_layers}_{args.max_depth}_{args.fdim}_{args.lr}_{_loss}_{args.optimizer}_{args.activation}_{args.n_epochs}"
 
     # Optimizer
     if args.optimizer == "adam":
