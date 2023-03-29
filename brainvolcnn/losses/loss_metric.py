@@ -250,21 +250,6 @@ class RCLossAnneal(nn.Module):
             self.mask = MaskTensor(mask)
         self.update_margins(epoch)
 
-    # def update_margins(self, epoch):
-    #     """Updates margins based on the current epoch."""
-    #     self.within_margin = np.max(
-    #         [
-    #             self.init_within_margin * 0.5 ** (epoch // self.margin_anneal_step),
-    #             self.min_within_margin,
-    #         ]
-    #     )
-    #     self.between_margin = np.min(
-    #         [
-    #             self.init_between_margin * 2.0 ** (epoch // self.margin_anneal_step),
-    #             self.max_between_margin,
-    #         ],
-    #     )
-
     def update_margins(self, epoch):
         if (epoch % self.margin_anneal_step == 0) & (epoch > 0):
             self.within_margin = np.max(
@@ -280,6 +265,16 @@ class RCLossAnneal(nn.Module):
                 ],
             )
 
+    def _rc_loss(self, input, target, within_margin, between_margin):
+        """Reconstruction and Contrastive Loss.
+
+        See brainvolcnn.loss.rc_loss for more details.
+        """
+        self.recon_loss, self.contrast_loss = _rc_loss_fn(input, target)
+        return torch.clamp(self.recon_loss - within_margin, min=0.0) + torch.clamp(
+            self.recon_loss - self.contrast_loss + between_margin, min=0.0
+        )
+
     def forward(self, input, target):
         if self.mask is not None:
             return rc_loss(
@@ -288,7 +283,7 @@ class RCLossAnneal(nn.Module):
                 within_margin=self.within_margin,
                 between_margin=self.between_margin,
             )
-        return rc_loss(
+        return self._rc_loss(
             input,
             target,
             within_margin=self.within_margin,

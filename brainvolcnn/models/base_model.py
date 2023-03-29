@@ -95,13 +95,9 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
-        # Logging
-        # self.logger.experiment.add_histogram(
-        #     "predicted_target_variance", y_hat.std(dim=0).flatten()
-        # )
-        self.log("train_loss", loss)
+        self.log("loss/train", loss)
         for name, fn in self.add_loss.items():
-            self.log(f"train_{name}", fn(y_hat, y))
+            self.log(f"{name}/train", fn(y_hat, y))
 
         return loss
 
@@ -109,22 +105,13 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         val_loss = self.loss_fn(y_hat, y)
-        self.log("val_loss", val_loss)
+        self.log("loss/val", val_loss)
         for name, fn in self.add_loss.items():
-            self.log(f"val_{name}", fn(y_hat, y))
+            self.log(f"{name}/val", fn(y_hat, y))
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         return self(batch)
-
-    # def test_step(self, batch, batch_idx):
-    #     x, y = batch
-    #     y_hat = self(x)
-    #     test_loss = self.loss_fn(y_hat, y)
-    #     self.log("test_loss", test_loss)
-    #     self.log("test_r2", r2_score(y_hat, y))
-    #     self.log("test_corr", corrcoef(y_hat, y))
-    #     return test_loss
 
     def configure_optimizers(self):
         optimizer = self.optimizer(self.parameters(), lr=self.lr)

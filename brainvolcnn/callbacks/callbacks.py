@@ -12,6 +12,15 @@ class RCLossMarginTune(Callback):
         self.log("hp/within_margin", pl_module.loss_fn.within_margin)
         self.log("hp/between_margin", pl_module.loss_fn.between_margin)
 
+    # Log reconstruction loss and contrastive loss at the end of each batch
+    def on_training_epoch_end(self, trainer, pl_module):
+        self.log("recon_loss/train", pl_module.loss_fn.recon_loss)
+        self.log("cont_loss/train", pl_module.loss_fn.contrast_loss)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        self.log("recon_loss/val", pl_module.loss_fn.recon_loss)
+        self.log("cont_loss/val", pl_module.loss_fn.contrast_loss)
+
 
 class SaveLastModel(Callback):
     """Callback to save the model at the end of training."""
