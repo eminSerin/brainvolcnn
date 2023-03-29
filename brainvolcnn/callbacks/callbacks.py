@@ -13,6 +13,16 @@ class RCLossMarginTune(Callback):
         self.log("hp/between_margin", pl_module.loss_fn.between_margin)
 
 
+class SaveLastModel(Callback):
+    """Callback to save the model at the end of training."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def on_train_end(self, trainer, pl_module):
+        trainer.save_checkpoint("last.ckpt")
+
+
 class LogGradients(Callback):
     """Callback to log the gradients of the model."""
 

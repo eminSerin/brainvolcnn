@@ -19,6 +19,7 @@ from brainvolcnn.callbacks.callbacks import (  # LogPredictionVariance,
     LogGradients,
     LogParameters,
     RCLossMarginTune,
+    SaveLastModel,
 )
 from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
 from brainvolcnn.losses.loss_metric import RCLossAnneal
@@ -121,7 +122,7 @@ def train(args):
         filename="best_loss",
         save_top_k=1,
         mode="min",
-        save_last=True,
+        # save_last=True,
     )
     checkpoint_callback_r2 = ModelCheckpoint(
         monitor="val_r2",
@@ -133,9 +134,7 @@ def train(args):
     callbacks = [
         checkpoint_callback_loss,
         checkpoint_callback_r2,
-        LogGradients(),
-        LogParameters(),
-        # LogPredictionVariance(),
+        SaveLastModel(),
     ]
 
     # Logger
@@ -143,6 +142,7 @@ def train(args):
         logger = TensorBoardLogger(
             args.working_dir, name="logs", version=args.ver, default_hp_metric=False
         )
+        callbacks.extend([LogGradients(), LogParameters()])
     elif args.logger == "wandb":
         logger = WandbLogger(
             name=args.ver,
