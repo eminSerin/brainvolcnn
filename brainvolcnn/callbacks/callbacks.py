@@ -14,12 +14,12 @@ class RCLossMarginTune(Callback):
 
     # Log reconstruction loss and contrastive loss at the end of each batch
     def on_training_epoch_end(self, trainer, pl_module):
-        self.log("recon_loss/train", pl_module.loss_fn.recon_loss)
-        self.log("cont_loss/train", pl_module.loss_fn.contrast_loss)
+        self.log("train/recon_loss", pl_module.loss_fn.recon_loss)
+        self.log("train/cont_loss", pl_module.loss_fn.contrast_loss)
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        self.log("recon_loss/val", pl_module.loss_fn.recon_loss)
-        self.log("cont_loss/val", pl_module.loss_fn.contrast_loss)
+        self.log("val/recon_loss", pl_module.loss_fn.recon_loss)
+        self.log("val/cont_loss", pl_module.loss_fn.contrast_loss)
 
 
 class SaveLastModel(Callback):
