@@ -95,9 +95,9 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
-        self.log("train/loss", loss)
+        self.log("train/loss", loss, on_step=True)
         for name, fn in self.add_loss.items():
-            self.log(f"train/{name}", fn(y_hat, y))
+            self.log(f"train/{name}", fn(y_hat, y), on_step=True)
 
         return loss
 
@@ -105,9 +105,9 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         val_loss = self.loss_fn(y_hat, y)
-        self.log("val/loss", val_loss)
+        self.log("val/loss", val_loss, on_step=True)
         for name, fn in self.add_loss.items():
-            self.log(f"val/{name}", fn(y_hat, y))
+            self.log(f"val/{name}", fn(y_hat, y), on_step=True)
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -119,6 +119,6 @@ class BaseModel(_BaseLayer):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer),
-                "monitor": "val_loss",
+                "monitor": "val/loss",
             },
         }
