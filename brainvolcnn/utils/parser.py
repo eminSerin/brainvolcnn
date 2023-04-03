@@ -289,7 +289,7 @@ def default_parser():
         "upsampling_mode": args.upsampling_mode,
         "n_conv_layers": args.n_conv_layers,
         "fdim": args.fdim,
-        "loss_mask": False if args.loss_mask is not None else True,
+        "loss_mask": True if args.loss_mask is not None else False,
     }
 
     # Loss
