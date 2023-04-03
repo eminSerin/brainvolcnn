@@ -150,7 +150,7 @@ def train(args):
             config=args._hparams,
             save_dir=args.working_dir,
         )
-        logger.watch(model, log="all", log_freq=100)
+        logger.watch(model, log="all", log_freq=50)
     logger.log_hyperparams(args._hparams)
 
     """Train Model"""
