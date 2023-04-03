@@ -266,6 +266,7 @@ def default_parser():
         "--logger",
         type=str,
         default="tensorboard",
+        choices=["tensorboard", "wandb"],
         help="Logger to use, default=tensorboard",
     )
 

@@ -117,7 +117,7 @@ def train(args):
 
     """Checkpoint"""
     checkpoint_callback_loss = ModelCheckpoint(
-        monitor="val_loss",
+        monitor="val/loss",
         dirpath=args.working_dir,
         filename="best_loss",
         save_top_k=1,
@@ -125,7 +125,7 @@ def train(args):
         # save_last=True,
     )
     checkpoint_callback_r2 = ModelCheckpoint(
-        monitor="val_r2",
+        monitor="val/r2",
         dirpath=args.working_dir,
         filename="best_r2",
         save_top_k=1,
