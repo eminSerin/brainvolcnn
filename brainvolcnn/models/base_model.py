@@ -95,9 +95,15 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         loss = self.loss_fn(y_hat, y)
-        self.log("train/loss", loss, prog_bar=True)
+        self.log("train/loss", loss, prog_bar=True, on_step=True, on_epoch=False)
         for name, fn in self.add_loss.items():
-            self.log(f"train/{name}", fn(y_hat, y), prog_bar=True)
+            self.log(
+                f"train/{name}",
+                fn(y_hat, y),
+                prog_bar=True,
+                on_step=True,
+                on_epoch=False,
+            )
 
         return loss
 
@@ -105,9 +111,9 @@ class BaseModel(_BaseLayer):
         x, y = batch
         y_hat = self(x)
         val_loss = self.loss_fn(y_hat, y)
-        self.log("val/loss", val_loss)
+        self.log("val/loss", val_loss, on_step=False, on_epoch=True)
         for name, fn in self.add_loss.items():
-            self.log(f"val/{name}", fn(y_hat, y), prog_bar=True)
+            self.log(f"val/{name}", fn(y_hat, y), on_step=False, on_epoch=True)
         return val_loss
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):

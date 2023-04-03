@@ -135,6 +135,8 @@ def train(args):
         checkpoint_callback_loss,
         checkpoint_callback_r2,
         SaveLastModel(),
+        LogGradients(),
+        LogParameters(),
     ]
 
     # Logger
@@ -142,7 +144,6 @@ def train(args):
         logger = TensorBoardLogger(
             args.working_dir, name="logs", version=args.ver, default_hp_metric=False
         )
-        callbacks.extend([LogGradients(), LogParameters()])
     elif args.logger == "wandb":
         logger = WandbLogger(
             name=args.ver,
@@ -150,7 +151,6 @@ def train(args):
             config=args._hparams,
             save_dir=args.working_dir,
         )
-        logger.watch(model, log="all", log_freq=50)
     logger.log_hyperparams(args._hparams)
 
     """Train Model"""
