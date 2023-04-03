@@ -7,6 +7,7 @@ import torch
 from brainvolcnn import models
 from brainvolcnn.losses.loss_metric import (
     R2,
+    BetweenMSELoss,
     ContrastiveLoss,
     ContrastiveLossAnneal,
     HuberLoss,
@@ -343,6 +344,7 @@ def default_parser():
     args.add_loss = {
         "corr": PearsonCorr(mask=args.loss_mask),
         "r2": R2(mask=args.loss_mask),
+        "between_mse": BetweenMSELoss(mask=args.loss_mask),
     }
 
     # Version

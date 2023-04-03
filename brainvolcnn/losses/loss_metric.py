@@ -30,6 +30,11 @@ def corrcoef_loss(input, target):
     return 1 - corrcoef(input, target)
 
 
+def between_mse(input, target):
+    """Computes the mean squared error between the input and the flipped target, aiming to maximize the difference between predicted values and target values of other subjects in a given batch"""
+    return FM.mean_squared_error(input, torch.flip(target, dims=[0]))
+
+
 def dice(input, target):
     raise NotImplementedError
 
@@ -150,6 +155,11 @@ class BaseLoss(nn.Module):
 class MSELoss(BaseLoss):
     def __init__(self, mask=None):
         super().__init__(mask=mask, loss_fn=nn.functional.mse_loss)
+
+
+class BetweenMSELoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=between_mse)
 
 
 class MAELoss(BaseLoss):
