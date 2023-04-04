@@ -159,6 +159,7 @@ def train(args):
         callbacks.append(RCLossMarginTune())
 
     trainer = pl.Trainer(
+        # max_epochs=2,
         max_epochs=args.n_epochs,
         accelerator=args.device,
         default_root_dir=args.working_dir,

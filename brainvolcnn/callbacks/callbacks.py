@@ -1,3 +1,5 @@
+import os.path as op
+
 from pytorch_lightning.callbacks import Callback
 
 
@@ -29,7 +31,7 @@ class SaveLastModel(Callback):
         super().__init__(*args, **kwargs)
 
     def on_train_end(self, trainer, pl_module):
-        trainer.save_checkpoint("last.ckpt")
+        trainer.save_checkpoint(op.join(trainer.default_root_dir, "last.ckpt"))
 
 
 class LogGradients(Callback):
