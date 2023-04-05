@@ -71,6 +71,7 @@ class BaseModel(_BaseLayer):
         lr=1e-3,
         add_loss={"corrcoef": corrcoef, "r2": r2_score},
         batch_norm=True,
+        lr_scheduler=True,
     ) -> None:
         super().__init__(
             in_chans,
@@ -89,6 +90,7 @@ class BaseModel(_BaseLayer):
         self.optimizer = optimizer
         self.lr = lr
         self.batch_norm = batch_norm
+        self.lr_scheduler = lr_scheduler
         self._features = [fdim * 2**i for i in range(max_level + 1)]
         if final_activation is not None:
             self.final_activation = _activation_fn(final_activation, self.out_chans)
@@ -122,11 +124,14 @@ class BaseModel(_BaseLayer):
         return self(batch)
 
     def configure_optimizers(self):
-        optimizer = self.optimizer(self.parameters(), lr=self.lr)
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer),
-                "monitor": "val/loss",
-            },
-        }
+        if self.lr_scheduler:
+            optimizer = self.optimizer(self.parameters(), lr=self.lr)
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer),
+                    "monitor": "val/loss",
+                },
+            }
+        else:
+            return self.optimizer(self.parameters(), lr=self.lr)

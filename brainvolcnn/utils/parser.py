@@ -134,6 +134,18 @@ def default_parser():
     )
 
     parser.add_argument(
+        "--lr_scheduler",
+        default=True,
+        help="Use ReduceLROnPlateau scheduler, default=True",
+    )
+
+    parser.add_argument(
+        "--batch_norm",
+        default=True,
+        help="Use batch normalization, default=True",
+    )
+
+    parser.add_argument(
         "--final_activation",
         type=str,
         choices=["relu", "relu_inplace", "prelu", "softmax", "sigmoid"],
@@ -293,6 +305,8 @@ def default_parser():
         "n_conv_layers": args.n_conv_layers,
         "fdim": args.fdim,
         "loss_mask": True if args.loss_mask is not None else False,
+        "batch_norm": args.batch_norm,
+        "lr_scheduler": args.lr_scheduler,
     }
 
     # Loss

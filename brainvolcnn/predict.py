@@ -47,6 +47,8 @@ def predict(args):
         add_loss=args.add_loss,
         max_level=args.max_depth,
         n_conv=args.n_conv_layers,
+        batch_norm=args.batch_norm,
+        lr_scheduler=args.lr_scheduler,
     ).to(args.device)
 
     """Predict"""

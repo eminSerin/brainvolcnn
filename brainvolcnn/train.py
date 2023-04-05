@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from sklearn.model_selection import train_test_split
@@ -99,6 +99,8 @@ def train(args):
             add_loss=args.add_loss,
             max_level=args.max_depth,
             n_conv=args.n_conv_layers,
+            batch_norm=args.batch_norm,
+            lr_scheduler=args.lr_scheduler,
         )
     else:
         model = args.architecture(
@@ -113,6 +115,8 @@ def train(args):
             add_loss=args.add_loss,
             max_level=args.max_depth,
             n_conv=args.n_conv_layers,
+            batch_norm=args.batch_norm,
+            lr_scheduler=args.lr_scheduler,
         )
 
     """Checkpoint"""
@@ -131,9 +135,11 @@ def train(args):
         save_top_k=1,
         mode="max",
     )
+    lr_monitor = LearningRateMonitor(logging_interval="step")
     callbacks = [
         checkpoint_callback_loss,
         checkpoint_callback_r2,
+        lr_monitor,
         SaveLastModel(),
     ]
 

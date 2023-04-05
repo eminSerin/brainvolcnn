@@ -53,6 +53,7 @@ class _BaseUnet(BaseModel):
         optimizer=optim.Adam,
         lr=0.001,
         batch_norm=True,
+        lr_scheduler=True,
         **kwargs,
     ) -> None:
         super().__init__(

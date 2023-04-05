@@ -24,6 +24,7 @@ class ResUnit(_BaseLayer):
         stride=1,
         activation="relu_inplace",
         up_mode="trilinear",
+        batch_norm=True,
     ) -> None:
         super().__init__(
             in_chans,
@@ -40,7 +41,8 @@ class ResUnit(_BaseLayer):
         layers = nn.ModuleList()
         in_ch = self.in_chans
         for _ in range(self.n_conv):
-            layers.append(call_layer("BatchNorm", dims)(in_ch))
+            if batch_norm:
+                layers.append(call_layer("BatchNorm", dims)(in_ch))
             layers.append(self._activation_fn)
             layers.append(
                 call_layer("Conv", dims)(
@@ -106,6 +108,8 @@ class _BaseResUNet(BaseModel):
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=0.001,
+        batch_norm=True,
+        lr_scheduler=True,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -141,6 +145,7 @@ class _BaseResUNet(BaseModel):
             activation=self.activation,
             up_mode=self.up_mode,
             n_conv=self.n_conv,
+            batch_norm=self.batch_norm,
         )
 
         # Downs
@@ -157,6 +162,7 @@ class _BaseResUNet(BaseModel):
                     activation=self.activation,
                     up_mode=self.up_mode,
                     n_conv=self.n_conv,
+                    batch_norm=self.batch_norm,
                 )
             )
             in_dim = feat
@@ -172,6 +178,7 @@ class _BaseResUNet(BaseModel):
             activation=self.activation,
             up_mode=self.up_mode,
             n_conv=self.n_conv,
+            batch_norm=self.batch_norm,
         )
 
         # Upscale blocks
@@ -199,6 +206,7 @@ class _BaseResUNet(BaseModel):
                     stride=self.stride,
                     activation=self.activation,
                     up_mode=self.up_mode,
+                    batch_norm=self.batch_norm,
                 )
             )
 
@@ -213,6 +221,7 @@ class _BaseResUNet(BaseModel):
                 stride=self.stride,
                 activation=self.activation,
                 up_mode=self.up_mode,
+                batch_norm=self.batch_norm,
             ),
             call_layer("Conv", dims)(fdim, self.out_chans, kernel_size=1),
         )
