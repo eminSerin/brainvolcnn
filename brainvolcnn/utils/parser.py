@@ -126,6 +126,8 @@ def default_parser():
             "elu_inplace",
             "tanh",
             "prelu",
+            "selu",
+            "selu_inplace",
         ],
         default="relu_inplace",
         help="Activation function, default=relu_inplace",

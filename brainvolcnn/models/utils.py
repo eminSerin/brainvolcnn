@@ -109,6 +109,7 @@ class _nConv(_BaseLayer):
         kernel_size=3,
         padding=1,
         stride=1,
+        batch_norm=True,
         activation="relu_inplace",
         up_mode="trilinear",
     ) -> None:
@@ -135,7 +136,8 @@ class _nConv(_BaseLayer):
                     stride=self.stride,
                 )
             )
-            layers.append(call_layer("BatchNorm", dims)(self.out_chans))
+            if batch_norm:
+                layers.append(call_layer("BatchNorm", dims)(self.out_chans))
             layers.append(self._activation_fn)
             in_ch = self.out_chans
 
@@ -256,6 +258,10 @@ def _activation_fn(activation="relu_inplace", n_channels=None):
         return nn.ELU(inplace=False)
     elif activation == "elu_inplace":
         return nn.ELU(inplace=True)
+    elif activation == "selu":
+        return nn.SELU(inplace=False)
+    elif activation == "selu_inplace":
+        return nn.SELU(inplace=True)
     elif activation == "tanh":
         return nn.Tanh()
     elif activation == "sigmoid":
