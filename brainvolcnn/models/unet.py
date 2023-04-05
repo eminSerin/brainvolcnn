@@ -47,12 +47,12 @@ class _BaseUnet(BaseModel):
         padding=1,
         stride=1,
         activation="relu_inplace",
-        batch_norm=True,
         up_mode="trilinear",
         final_activation=None,
         loss_fn=F.mse_loss,
         optimizer=optim.Adam,
         lr=0.001,
+        batch_norm=True,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -102,7 +102,7 @@ class _BaseUnet(BaseModel):
                     kernel_size=self.kernel_size,
                     padding=self.padding,
                     activation=self.activation,
-                    batch_norm=batch_norm,
+                    batch_norm=self.batch_norm,
                 )
             )
             in_dim = feat
@@ -116,7 +116,7 @@ class _BaseUnet(BaseModel):
             padding=self.padding,
             dims=dims,
             activation=self.activation,
-            batch_norm=batch_norm,
+            batch_norm=self.batch_norm,
         )
 
         # Upscale blocks
@@ -138,7 +138,7 @@ class _BaseUnet(BaseModel):
                     padding=self.padding,
                     dims=dims,
                     activation=self.activation,
-                    batch_norm=batch_norm,
+                    batch_norm=self.batch_norm,
                 )
             )
 
@@ -152,7 +152,7 @@ class _BaseUnet(BaseModel):
                 kernel_size=self.kernel_size,
                 padding=self.padding,
                 activation=self.activation,
-                batch_norm=batch_norm,
+                batch_norm=self.batch_norm,
             ),
             call_layer("Conv", dims)(self.fdim, self.out_chans, kernel_size=1),
         )

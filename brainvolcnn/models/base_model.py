@@ -70,6 +70,7 @@ class BaseModel(_BaseLayer):
         optimizer=optim.Adam,
         lr=1e-3,
         add_loss={"corrcoef": corrcoef, "r2": r2_score},
+        batch_norm=True,
     ) -> None:
         super().__init__(
             in_chans,
@@ -87,6 +88,7 @@ class BaseModel(_BaseLayer):
         self.add_loss = add_loss
         self.optimizer = optimizer
         self.lr = lr
+        self.batch_norm = batch_norm
         self._features = [fdim * 2**i for i in range(max_level + 1)]
         if final_activation is not None:
             self.final_activation = _activation_fn(final_activation, self.out_chans)
