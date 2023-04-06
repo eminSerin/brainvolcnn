@@ -15,14 +15,15 @@ path = op.abspath(op.join(op.dirname(__file__), ".."))
 if path not in sys.path:
     sys.path.append(path)
 del sys, path
-from brainvolcnn.callbacks.callbacks import (  # LogPredictionVariance,
+from brainvolcnn.callbacks.callbacks import (
     LogGradients,
     LogParameters,
+    LogReconContrastLoss,
     RCLossMarginTune,
     SaveLastModel,
 )
 from brainvolcnn.datasets.taskgen_dataset import TaskGenDataset
-from brainvolcnn.losses.loss_metric import RCLossAnneal
+from brainvolcnn.losses.loss_metric import RCLossAnneal, RCLossV2
 from brainvolcnn.utils.parser import default_parser
 
 
@@ -142,6 +143,8 @@ def train(args):
         lr_monitor,
         SaveLastModel(),
     ]
+    if isinstance(args.loss, RCLossAnneal) or isinstance(args.loss, RCLossV2):
+        callbacks.append(LogReconContrastLoss())
 
     # Logger
     if args.logger == "tensorboard":

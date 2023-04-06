@@ -155,6 +155,41 @@ class R2(nn.Module):
         return r2_score(input, target)
 
 
+class RCLossV2(nn.Module):
+    """
+    Initializes the RCLossV2 module.
+
+    Args:
+        margin (float): The margin value for the reconstruction loss.
+        mask (torch.Tensor or None, optional): A mask tensor to apply to the loss. Defaults to None.
+    """
+
+    def __init__(self, margin, alpha=0.05, mask=None) -> None:
+        super().__init__()
+        self.margin = margin
+        self.alpha = alpha
+        if mask is not None:
+            self.mask = MaskTensor(mask)
+
+    def forward(self, input, target):
+        """
+        Calculates the contrastive reconstructive loss for the given inputs.
+
+        Args:
+            input (torch.Tensor): The predicted input tensor.
+            target (torch.Tensor): The target input tensor.
+
+        Returns:
+            torch.Tensor: The total loss value.
+        """
+        if hasattr(self, "mask"):
+            input = self.mask.apply_mask(input)
+            target = self.mask.apply_mask(target)
+        self.recon_loss = torch.clamp(F.mse_loss(input, target) - self.margin, min=0)
+        self.contrast_loss = -F.mse_loss(input, torch.flip(target, dims=[0]))
+        return self.recon_loss * (1 - self.alpha) + self.contrast_loss * self.alpha
+
+
 class RCLossAnneal(nn.Module):
     """Reconstruction and Contrastive Loss with Annealing.
 
@@ -180,7 +215,6 @@ class RCLossAnneal(nn.Module):
 
     Returns
     ----------
-
     torch.float:
         RC Loss between target and input.
     """

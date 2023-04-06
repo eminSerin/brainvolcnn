@@ -5,9 +5,17 @@ from argparse import ArgumentParser
 import torch
 
 from brainvolcnn import models
-from brainvolcnn.losses.loss_metric import (R2, BetweenMSELoss, HuberLoss,
-                                            MAELoss, MSELoss, MSLELoss,
-                                            PearsonCorr, RCLossAnneal)
+from brainvolcnn.losses.loss_metric import (
+    R2,
+    BetweenMSELoss,
+    HuberLoss,
+    MAELoss,
+    MSELoss,
+    MSLELoss,
+    PearsonCorr,
+    RCLossAnneal,
+    RCLossV2,
+)
 
 
 def boolean_string(s):
@@ -156,13 +164,7 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=[
-            "rc",
-            "mse",
-            "mae",
-            "msle",
-            "huber",
-        ],
+        choices=["rc", "mse", "mae", "msle", "huber", "rc_v2"],
         default="mse",
         help="Loss function, default=mse",
     )
@@ -256,15 +258,8 @@ def default_parser():
     parser.add_argument(
         "--alpha",
         type=float,
-        default=0.5,
-        help="Alpha weight for contrastive loss, default=0.5",
-    )
-
-    parser.add_argument(
-        "--min_alpha",
-        type=float,
-        default=0.0,
-        help="Minimum alpha weight for contrastive loss, default=0.0",
+        default=0.05,
+        help="Alpha weight for contrastive loss, default=0.05",
     )
 
     parser.add_argument(
@@ -321,6 +316,14 @@ def default_parser():
         args.loss = MAELoss(mask=args.loss_mask)
     elif args.loss == "huber":
         args.loss = HuberLoss(mask=args.loss_mask)
+    elif args.loss == "rc_v2":
+        args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
+        args._hparams["alpha"] = args.alpha
+        args.loss = RCLossV2(
+            margin=args.init_within_subj_margin,
+            mask=args.loss_mask,
+            alpha=args.alpha,
+        )
     elif args.loss == "rc":
         args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
         args._hparams["init_across_subj_margin"] = args.init_across_subj_margin

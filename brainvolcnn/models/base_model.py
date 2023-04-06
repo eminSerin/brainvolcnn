@@ -108,7 +108,6 @@ class BaseModel(_BaseLayer):
                 on_step=True,
                 on_epoch=False,
             )
-
         return loss
 
     def validation_step(self, batch, batch_idx):
