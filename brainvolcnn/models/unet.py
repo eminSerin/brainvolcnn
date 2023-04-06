@@ -71,6 +71,8 @@ class _BaseUnet(BaseModel):
             loss_fn,
             optimizer,
             lr,
+            batch_norm=batch_norm,
+            lr_scheduler=lr_scheduler,
             **kwargs,
         )
         self.dims = dims

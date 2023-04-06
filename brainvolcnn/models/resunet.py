@@ -25,6 +25,7 @@ class ResUnit(_BaseLayer):
         activation="relu_inplace",
         up_mode="trilinear",
         batch_norm=True,
+        lr_scheduler=True,
     ) -> None:
         super().__init__(
             in_chans,
@@ -35,6 +36,8 @@ class ResUnit(_BaseLayer):
             stride,
             activation,
             up_mode,
+            batch_norm=batch_norm,
+            lr_scheduler=lr_scheduler,
         )
         if n_conv is None:
             self.n_conv = 2

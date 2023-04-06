@@ -5,18 +5,18 @@ from argparse import ArgumentParser
 import torch
 
 from brainvolcnn import models
-from brainvolcnn.losses.loss_metric import (
-    R2,
-    BetweenMSELoss,
-    ContrastiveLoss,
-    ContrastiveLossAnneal,
-    HuberLoss,
-    MAELoss,
-    MSELoss,
-    MSLELoss,
-    PearsonCorr,
-    RCLossAnneal,
-)
+from brainvolcnn.losses.loss_metric import (R2, BetweenMSELoss, HuberLoss,
+                                            MAELoss, MSELoss, MSLELoss,
+                                            PearsonCorr, RCLossAnneal)
+
+
+def boolean_string(s):
+    """Convert string to boolean"""
+    if type(s) is bool:
+        return s
+    if s not in {"False", "True"}:
+        raise ValueError("Not a valid boolean string")
+    return s == "True"
 
 
 def default_parser():
@@ -159,8 +159,6 @@ def default_parser():
         choices=[
             "rc",
             "mse",
-            "contrastive",
-            "contrastive_anneal",
             "mae",
             "msle",
             "huber",
@@ -292,6 +290,10 @@ def default_parser():
     else:
         args.unmask = False
 
+    # Boolean arguments
+    args.batch_norm = boolean_string(args.batch_norm)
+    args.lr_scheduler = boolean_string(args.lr_scheduler)
+
     args._hparams = {
         "conv_dim": args.conv_dim,
         "max_depth": args.max_depth,
@@ -331,27 +333,6 @@ def default_parser():
             min_within_margin=args.min_within_subj_margin,
             max_between_margin=args.max_across_subj_margin,
             margin_anneal_step=args.anneal_step,
-            mask=args.loss_mask,
-        )
-    elif args.loss == "contrastive":
-        args._hparams["alpha"] = args.alpha
-        args.loss = ContrastiveLoss(
-            alpha=args.alpha,
-            mask=args.loss_mask,
-        )
-    elif args.loss == "contrastive_anneal":
-        args._hparams["alpha"] = args.alpha
-        args._hparams["min_alpha"] = args.min_alpha
-        args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
-        args._hparams["init_across_subj_margin"] = args.init_across_subj_margin
-        args._hparams["anneal_step"] = args.anneal_step
-        ## TODO: Add anneal percent for annealing. Not urgent.
-        args.loss = ContrastiveLossAnneal(
-            alpha=args.alpha,
-            min_alpha=args.min_alpha,
-            within_margin=args.init_within_subj_margin,
-            between_margin=args.init_across_subj_margin,
-            anneal_step=args.anneal_step,
             mask=args.loss_mask,
         )
     else:

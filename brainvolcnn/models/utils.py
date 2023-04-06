@@ -292,3 +292,13 @@ def _reparameterize(mu, logvar):
     std = torch.exp(0.5 * logvar)
     eps = torch.randn_like(std)
     return mu + eps * std
+
+
+def xavier_init(model):
+    """Xavier initialization for the weights."""
+    for name, param in model.named_parameters():
+        if name.endswith(".bias"):
+            param.data.fill_(0)
+        else:
+            bound = torch.sqrt(6) / torch.sqrt(param.shape[0] + param.shape[1])
+            param.data.uniform_(-bound, bound)

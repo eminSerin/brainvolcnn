@@ -43,21 +43,6 @@ def dice_auc(input, target):
     raise NotImplementedError
 
 
-def _rc_loss_fn(input, target):
-    """Computes the Reconstruction and Contrastive Losses.
-
-    Reconstruction loss is the mean squared error between the input and target, aiming to minimize the difference between predicted and target values. Contrastive loss is the mean squared error between the input and the flipped target, aiming to maximize the difference between predicted values and target values of other subjects in a given batch.
-    """
-    if input.shape[0] < 2:
-        raise ValueError(
-            "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
-        )
-
-    return FM.mean_squared_error(input, target), FM.mean_squared_error(
-        input, torch.flip(target, dims=[0])
-    )
-
-
 def rc_loss(input, target, within_margin=0, between_margin=0):
     """Construction Reconstruction Loss (RC Loss) as described in [1].
 
@@ -81,56 +66,15 @@ def rc_loss(input, target, within_margin=0, between_margin=0):
     -----------
     [1] Ngo, Gia H., et al. "Predicting individual task contrasts from resting‐state functional connectivity using a surface‐based convolutional network." NeuroImage 248 (2022): 118849.
     """
-    recon_loss, contrast_loss = _rc_loss_fn(input, target)
-    return torch.clamp(recon_loss - within_margin, min=0.0) + torch.clamp(
-        recon_loss - contrast_loss + between_margin, min=0.0
-    )
-
-
-def contrastive_loss(input, target, within_margin=1, between_margin=0.0, alpha=0.5):
-    """Computes contrastive loss.
-
-    It computes within and between contrastive loss and combines them using alpha.
-    Within contrastive loss is computed as the mean of cosine similarity between input and target, while between contrastive loss is computed as the mean of cosine similarity between input and flipped target.
-
-    Parameters
-    ----------
-    input : torch.Tensor
-        Predicted values.
-    target : torch.Tensor
-        True values.
-    within_margin : int, optional
-        Ensure that within cosine similarity is below margin, by default 1
-    between_margin : float, optional
-        Ensure that between cosine similarity is above margin, by default 0.0
-    alpha : float, optional
-        Alpha to combine within and between loss. Specifically, alpha=1.0 is only within loss, while alpha=0 is between loss, by default 0.5
-
-    Returns
-    -------
-    torch.float
-        Contrastive loss.
-
-    Raises
-    ------
-    ValueError
-        Raise ValueError if input and target have different batch size.
-    ValueError
-        Raise ValueError if input and target have less than 2 samples.
-    """
-    # Compute contrastive loss using cosine similarity
-    if input.shape[0] != target.shape[0]:
-        raise ValueError("Input and target must have the same batch size")
     if input.shape[0] < 2:
         raise ValueError(
             "Input and target must have at least 2 samples! Otherwise it cannot compute contrastive loss."
         )
-    within = F.cosine_similarity(input, target).mean()
-    between = F.cosine_similarity(input, torch.flip(target, dims=[0])).mean()
-    return (
-        torch.clamp(within_margin - within, min=0) * alpha
-        + torch.clamp(between - between_margin, min=0) * (1 - alpha)
-    ) * 2
+    recon_loss = FM.mean_squared_error(input, target)
+    contrast_loss = FM.mean_squared_error(input, torch.flip(target, dims=[0]))
+    return torch.clamp(recon_loss - within_margin, min=0.0) + torch.clamp(
+        recon_loss - contrast_loss + between_margin, min=0.0
+    )
 
 
 """OOP"""
@@ -228,11 +172,15 @@ class RCLossAnneal(nn.Module):
         Maximum between subject (contrastive) margin, by default 10
     margin_anneal_step : int, optional
         The number of epochs should be done before margin annealing happens, by default 10
+    alpha : float, optional
+        The weight of the reconstructive loss, by default 0.5
+        1.0: only reconstructive loss
     mask : torch.Tensor, optional
         Mask tensor, by default None.
 
     Returns
     ----------
+
     torch.float:
         RC Loss between target and input.
     """
@@ -245,6 +193,7 @@ class RCLossAnneal(nn.Module):
         min_within_margin=1.0,
         max_between_margin=10,
         margin_anneal_step=10,
+        alpha=0.5,
         mask=None,
     ):
         super().__init__()
@@ -255,6 +204,7 @@ class RCLossAnneal(nn.Module):
         self.margin_anneal_step = margin_anneal_step
         self.within_margin = init_within_margin
         self.between_margin = init_between_margin
+        self.alpha = alpha
         self.mask = mask
         if mask is not None:
             self.mask = MaskTensor(mask)
@@ -280,9 +230,15 @@ class RCLossAnneal(nn.Module):
 
         See brainvolcnn.loss.rc_loss for more details.
         """
-        self.recon_loss, self.contrast_loss = _rc_loss_fn(input, target)
-        return torch.clamp(self.recon_loss - within_margin, min=0.0) + torch.clamp(
-            self.recon_loss - self.contrast_loss + between_margin, min=0.0
+        self.recon_loss = FM.mean_squared_error(input, target)
+        self.contrast_loss = FM.mean_squared_error(input, torch.flip(target, dims=[0]))
+        return (
+            torch.clamp(self.recon_loss - within_margin, min=0.0) * self.alpha
+            + torch.clamp(
+                self.recon_loss - self.contrast_loss + between_margin, min=0.0
+            )
+            * (1 - self.alpha)
+            * 2
         )
 
     def forward(self, input, target):
@@ -299,83 +255,3 @@ class RCLossAnneal(nn.Module):
             within_margin=self.within_margin,
             between_margin=self.between_margin,
         )
-
-
-class ContrastiveLoss(nn.Module):
-    """Class for contrastive loss.
-
-    Also see brainvolcnn.losses.loss_metric.contrastive_loss
-    for more details.
-
-    Arguments
-    ----------
-    mask : torch.Tensor, optional
-        Mask tensor, by default None.
-    alpha : float, optional
-        Alpha value for combining within and between losses, by default 0.5
-    within_margin : float, optional
-        Within margin, by default 1.0
-    between_margin : float, optional
-        Between margin, by default 0.0
-    """
-
-    def __init__(self, mask=None, alpha=0.5, within_margin=1.0, between_margin=0.0):
-        super().__init__()
-        self.mask = mask
-        if mask is not None:
-            self.mask = MaskTensor(mask)
-        self.alpha = alpha
-        self.within_margin = within_margin
-        self.between_margin = between_margin
-
-    def forward(self, input, target):
-        if self.mask is not None:
-            return contrastive_loss(
-                self.mask.apply_mask(input),
-                self.mask.apply_mask(target),
-                alpha=self.alpha,
-                within_margin=self.within_margin,
-                between_margin=self.between_margin,
-            )
-        return contrastive_loss(
-            input,
-            target,
-            alpha=self.alpha,
-            within_margin=self.within_margin,
-            between_margin=self.between_margin,
-        )
-
-
-class ContrastiveLossAnneal(ContrastiveLoss):
-    """Contrastive loss with annealing.
-
-    Inherits from ContrastiveLoss. See ContrastiveLoss for more details.
-    Despite ContrastiveLoss, this class has an additional parameter
-    called anneal_step. This parameter controls the number of epochs
-    required before the alpha value is annealed. During annealing the
-    alpha value is decreased by a factor of anneal_percent. The minimum
-    alpha value is defined by min_alpha.
-
-    Methods:
-    ----------
-    update_alpha(epoch):
-        Updates alpha value based on the current epoch.
-    """
-
-    def __init__(
-        self, epoch=0, anneal_step=20, anneal_percent=0.1, min_alpha=0.0, **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.epoch = epoch
-        self.anneal_step = anneal_step
-        self.min_alpha = min_alpha
-        self.anneal_percent = anneal_percent
-        self._mod = None
-
-    def update_alpha(self, epoch):
-        _mod = epoch % self.anneal_step
-        if _mod != 0 and _mod != self._mod:
-            self._mod = _mod
-            self.alpha = max(
-                self.alpha - self.alpha * self.anneal_percent, self.min_alpha
-            )
