@@ -58,14 +58,6 @@ def train(args):
         mask=args.mask,
         unmask=unmask,
     )
-    val_set = TaskGenDataset(
-        val_ids,
-        args.rest_dir,
-        args.task_dir,
-        num_samples=args.n_samples_per_subj,
-        mask=args.mask,
-        unmask=unmask,
-    )
 
     train_loader = DataLoader(
         train_set,
@@ -74,13 +66,24 @@ def train(args):
         num_workers=args.n_workers,
         drop_last=True,
     )
-    val_loader = DataLoader(
-        val_set,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.n_workers,
-        drop_last=True,
-    )
+
+    if args.run_validation:
+        val_set = TaskGenDataset(
+            val_ids,
+            args.rest_dir,
+            args.task_dir,
+            num_samples=args.n_samples_per_subj,
+            mask=args.mask,
+            unmask=unmask,
+        )
+
+        val_loader = DataLoader(
+            val_set,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=args.n_workers,
+            drop_last=True,
+        )
 
     """Init Model"""
     # Loads model from checkpoint if specified
@@ -177,7 +180,12 @@ def train(args):
         # limit_train_batches=1,
         # limit_val_batches=1,
     )
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
+    if args.run_validation:
+        trainer.fit(
+            model=model, train_dataloaders=train_loader, val_dataloaders=val_loader
+        )
+    else:
+        trainer.fit(model=model, train_dataloaders=train_loader)
 
 
 if __name__ == "__main__":

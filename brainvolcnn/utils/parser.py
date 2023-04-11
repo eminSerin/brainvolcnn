@@ -55,6 +55,13 @@ def default_parser():
     )
 
     parser.add_argument(
+        "run_validation",
+        type=str,
+        default="True",
+        help="Run validation after training",
+    )
+
+    parser.add_argument(
         "--test_list",
         type=str,
         help="File containing the test subject ID list, one subject ID on each line",
@@ -288,6 +295,7 @@ def default_parser():
     # Boolean arguments
     args.batch_norm = boolean_string(args.batch_norm)
     args.lr_scheduler = boolean_string(args.lr_scheduler)
+    args.run_validation = boolean_string(args.run_validation)
 
     args._hparams = {
         "conv_dim": args.conv_dim,
