@@ -55,7 +55,7 @@ def default_parser():
     )
 
     parser.add_argument(
-        "run_validation",
+        "--run_validation",
         type=str,
         default="True",
         help="Run validation after training",
