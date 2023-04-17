@@ -30,6 +30,8 @@ def predict(args):
 
     """Load Datalist"""
     subj_ids = np.genfromtxt(args.test_list, dtype=int, delimiter=",")
+    if subj_ids[0] == -1:
+        subj_ids = np.genfromtxt(args.test_list, dtype=str, delimiter=",")
 
     """Init Model"""
     if args.checkpoint_file is None:

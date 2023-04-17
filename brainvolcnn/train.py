@@ -39,8 +39,12 @@ def train(args):
 
     """Load Data"""
     train_ids = np.genfromtxt(args.train_list, dtype=int, delimiter=",")
+    if train_ids[0] == -1:
+        train_ids = np.genfromtxt(args.train_list, dtype=str, delimiter=",")
     if args.val_list is not None:
         val_ids = np.genfromtxt(args.val_list, dtype=int, delimiter=",")
+        if val_ids[0] == -1:
+            val_ids = np.genfromtxt(args.val_list, dtype=str, delimiter=",")
     else:
         train_ids, val_ids = train_test_split(
             train_ids, test_size=args.val_percent, random_state=args.seed
