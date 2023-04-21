@@ -1,6 +1,6 @@
 import os.path as op
 
-from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.callbacks import BaseFinetuning, Callback
 
 
 class RCLossMarginTune(Callback):
@@ -65,3 +65,16 @@ class LogParameters(Callback):
             pl_module.logger.experiment.add_histogram(
                 f"{tag}/weight", value.data.cpu(), global_step=trainer.global_step
             )
+
+
+class FinalLayerFreeze(BaseFinetuning):
+    """Callback to freeze the final layer of the model."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def freeze_before_training(self, pl_module) -> None:
+        self.freeze(pl_module, pl_module.out_block[1])
+
+    def finetune_function(self, pl_module, epoch, optimizer, opt_idx) -> None:
+        pass

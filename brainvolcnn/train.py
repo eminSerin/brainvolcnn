@@ -16,6 +16,7 @@ if path not in sys.path:
     sys.path.append(path)
 del sys, path
 from brainvolcnn.callbacks.callbacks import (
+    FinalLayerFreeze,
     LogGradients,
     LogParameters,
     LogReconContrastLoss,
@@ -173,6 +174,10 @@ def train(args):
     ## TODO: Add early stopping!
     if isinstance(args.loss, RCLossAnneal):
         callbacks.append(RCLossMarginTune())
+
+    # Freeze final layer (i.e., finetune only backbone)
+    if args.freeze_final_layer:
+        callbacks.append(FinalLayerFreeze())
 
     trainer = pl.Trainer(
         # max_epochs=2,

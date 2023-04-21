@@ -147,6 +147,12 @@ def default_parser():
         default="relu_inplace",
         help="Activation function, default=relu_inplace",
     )
+    
+    parser.add_argument(
+        "--freeze_final_layer",
+        default=False,
+        help="Freeze final layer, default=False",
+    )
 
     parser.add_argument(
         "--lr_scheduler",
@@ -296,6 +302,7 @@ def default_parser():
     args.batch_norm = boolean_string(args.batch_norm)
     args.lr_scheduler = boolean_string(args.lr_scheduler)
     args.run_validation = boolean_string(args.run_validation)
+    args.freeze_final_layer = boolean_string(args.freeze_final_layer)
 
     args._hparams = {
         "conv_dim": args.conv_dim,
