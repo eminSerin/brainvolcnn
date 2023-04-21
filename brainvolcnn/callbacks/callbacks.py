@@ -76,5 +76,5 @@ class FinalLayerFreeze(BaseFinetuning):
     def freeze_before_training(self, pl_module) -> None:
         self.freeze(pl_module, pl_module.out_block[1])
 
-    def finetune_function(self, pl_module, epoch, optimizer, opt_idx) -> None:
+    def finetune_function(self, pl_module, epoch, optimizer, *args, **kwargs) -> None:
         pass
