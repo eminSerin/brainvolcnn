@@ -1,5 +1,6 @@
 import os
 import os.path as op
+from logging import warning
 
 import numpy as np
 import torch
@@ -23,13 +24,18 @@ def predict(args):
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    if op.exists(args.working_dir):
-        raise FileExistsError(f"{args.working_dir} already exists!")
-    else:
+    if not op.exists(args.working_dir):
         os.makedirs(args.working_dir)
+    else:
+        warning(
+            f"{args.working_dir} already exists!, The existing files will not be overwritten!"
+        )
 
     """Load Datalist"""
     subj_ids = np.genfromtxt(args.test_list, dtype=int, delimiter=",")
+    if subj_ids.ndim == 0:
+        # If only one subject ID is provided, convert it to a list
+        subj_ids = np.array([subj_ids])
     if subj_ids[0] == -1:
         subj_ids = np.genfromtxt(args.test_list, dtype=str, delimiter=",")
 
@@ -79,7 +85,7 @@ def predict(args):
                         )
                     np.save(pred_file, np.array(pred_list))
                 else:
-                    print(f"Skipping {id} because prediction already exists!")
+                    warning(f"Skipping {id} because prediction already exists!")
 
     print("Finished predicting!")
 

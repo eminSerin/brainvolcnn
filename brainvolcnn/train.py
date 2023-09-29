@@ -179,6 +179,7 @@ def train(args):
     if args.freeze_final_layer:
         callbacks.append(FinalLayerFreeze())
 
+    ## TODO: Add multiple GPU support!
     trainer = pl.Trainer(
         # max_epochs=2,
         max_epochs=args.n_epochs,
