@@ -110,6 +110,7 @@ def train(args):
             n_conv=args.n_conv_layers,
             batch_norm=args.batch_norm,
             lr_scheduler=args.lr_scheduler,
+            lr=args.lr,
         )
     else:
         model = args.architecture(
@@ -126,6 +127,7 @@ def train(args):
             n_conv=args.n_conv_layers,
             batch_norm=args.batch_norm,
             lr_scheduler=args.lr_scheduler,
+            lr=args.lr,
         )
 
     """Checkpoint"""
