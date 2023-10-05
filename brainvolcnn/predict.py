@@ -72,7 +72,7 @@ def predict(args):
                     pred_list = []
                     for sample_id in range(args.n_samples_per_subj):
                         rest_file = op.join(
-                            args.rest_dir, f"{id}_sample{sample_id}_rsfc.npy"
+                            args.rexst_dir, f"{id}_sample{sample_id}_rsfc.npy"
                         )
                         img = load_timeseries(
                             rest_file,
