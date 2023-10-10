@@ -171,7 +171,9 @@ class AverageDataLoader(DataLoader):
 
     def __iter__(self):
         for batch in super().__iter__():
-            yield torch.mean(batch, dim=0).unsqueeze(dim=0)
+            for i in range(len(batch)):
+                batch[i] = torch.mean(batch[i], dim=0).unsqueeze(dim=0)
+            yield batch
 
 
 class ResidualizedDataloader(DataLoader):
@@ -202,5 +204,6 @@ class ResidualizedDataloader(DataLoader):
 
     def __iter__(self):
         for batch in super().__iter__():
-            batch = batch - torch.mean(batch, dim=0).unsqueeze(dim=0)
+            for i in range(len(batch)):
+                batch[i] = batch[i] - torch.mean(batch[i], dim=0).unsqueeze(dim=0)
             yield batch

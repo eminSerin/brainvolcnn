@@ -3,8 +3,13 @@
 from argparse import ArgumentParser
 
 import torch
+from torch.utils.data import DataLoader
 
 from brainvolcnn import models
+from brainvolcnn.datasets.taskgen_dataset import (
+    AverageDataLoader,
+    ResidualizedDataloader,
+)
 from brainvolcnn.losses.loss_metric import (
     R2,
     BetweenMSELoss,
@@ -127,6 +132,14 @@ def default_parser():
         help="Number of feature dimensions (i.e., features in the first convolutional layer), default=64",
     )
 
+    parser.add_argument(
+        "--output_type",
+        type=str,
+        choices=["combined", "mean", "residual"],
+        default="combined",
+        help="Output type, default=combined",
+    )
+
     parser.add_argument("--n_epochs", type=int, default=100, help="Number of epochs")
 
     parser.add_argument(
@@ -147,7 +160,7 @@ def default_parser():
         default="relu_inplace",
         help="Activation function, default=relu_inplace",
     )
-    
+
     parser.add_argument(
         "--freeze_final_layer",
         default=False,
@@ -319,6 +332,7 @@ def default_parser():
         "loss_mask": True if args.loss_mask is not None else False,
         "batch_norm": args.batch_norm,
         "lr_scheduler": args.lr_scheduler,
+        "output_type": args.output_type,
     }
 
     # Loss
@@ -385,4 +399,15 @@ def default_parser():
         args.architecture = getattr(models.unet, f"UNet{args.conv_dim}DMinimal")
     elif args.architecture == "vnet":
         args.architecture = getattr(models.vnet, f"VNet{args.conv_dim}D")
+
+    # DataLoader
+    if args.output_type == "combined":
+        args._dataloader = DataLoader
+    elif args.output_type == "mean":
+        args._dataloader = AverageDataLoader
+    elif args.output_type == "residual":
+        args._dataloader = ResidualizedDataloader
+    else:
+        raise ValueError(f"Output type {args.output_type} not supported")
+
     return args

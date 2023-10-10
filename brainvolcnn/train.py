@@ -64,7 +64,7 @@ def train(args):
         unmask=unmask,
     )
 
-    train_loader = DataLoader(
+    train_loader = args._dataloader(
         train_set,
         batch_size=args.batch_size,
         shuffle=True,
@@ -82,7 +82,7 @@ def train(args):
             unmask=unmask,
         )
 
-        val_loader = DataLoader(
+        val_loader = args._dataloader(
             val_set,
             batch_size=args.batch_size,
             shuffle=False,
