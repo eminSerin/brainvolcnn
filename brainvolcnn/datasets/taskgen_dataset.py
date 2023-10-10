@@ -2,7 +2,7 @@ import os.path as op
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 
 from .utils import _unmask_timeseries
 
@@ -144,3 +144,63 @@ class TaskGenDatasetLinear(TaskGenDataset):
         else:
             rest_data = super().__getitem__(idx)
             return rest_data.flatten(1)
+
+
+class AverageDataLoader(DataLoader):
+    """DataLoader that averages over the samples in a batch.
+
+    Parameters
+    ----------
+    PyTorch DataLoader arguments
+
+    Returns
+    ----------
+    torch.utils.data.DataLoader:
+        DataLoader object that averages over the samples in a batch.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            **kwargs,
+        )
+
+    def __iter__(self):
+        for batch in super().__iter__():
+            yield torch.mean(batch, dim=0).unsqueeze(dim=0)
+
+
+class ResidualizedDataloader(DataLoader):
+    """DataLoader that residualizes the samples in a batch.
+
+    Residualization is done by subtracting the mean of the
+    batch from each sample in the batch.
+
+    Parameters
+    ----------
+    PyTorch DataLoader arguments
+
+    Returns
+    ----------
+    torch.utils.data.DataLoader:
+        DataLoader object that residualizes the samples in a batch.
+    """
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            *args,
+            **kwargs,
+        )
+
+    def __iter__(self):
+        for batch in super().__iter__():
+            batch = batch - torch.mean(batch, dim=0).unsqueeze(dim=0)
+            yield batch
