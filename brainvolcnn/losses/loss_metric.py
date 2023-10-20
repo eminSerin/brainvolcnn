@@ -43,6 +43,13 @@ def dice_auc(input, target):
     raise NotImplementedError
 
 
+def vae_loss(input, target, mu, logvar):
+    """Variational Autoencoder Loss."""
+    recon_loss = F.mse_loss(input, target)
+    kld_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    return recon_loss + kld_loss
+
+
 def rc_loss(input, target, within_margin=0, between_margin=0):
     """Construction Reconstruction Loss (RC Loss) as described in [1].
 
@@ -94,6 +101,18 @@ class BaseLoss(nn.Module):
                 self.mask.apply_mask(input), self.mask.apply_mask(target)
             )
         return self.loss_fn(input, target)
+
+
+class VAELoss(BaseLoss):
+    def __init__(self, mask=None):
+        super().__init__(mask=mask, loss_fn=vae_loss)
+
+    def forward(self, input, target, mu, logvar):
+        if self.mask is not None:
+            return self.loss_fn(
+                self.mask.apply_mask(input), self.mask.apply_mask(target), mu, logvar
+            )
+        return self.loss_fn(input, target, mu, logvar)
 
 
 class MSELoss(BaseLoss):

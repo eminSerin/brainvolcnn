@@ -82,8 +82,8 @@ def default_parser():
     parser.add_argument(
         "--architecture",
         type=str,
-        choices=["resunet", "unet", "unetminimal"],
-        default="resunet",
+        choices=["resunet", "unet", "unetminimal", "vae"],
+        default="unetminimal",
         help="Model architecture",
     )
 
@@ -399,6 +399,8 @@ def default_parser():
         args.architecture = getattr(models.unet, f"UNet{args.conv_dim}DMinimal")
     elif args.architecture == "vnet":
         args.architecture = getattr(models.vnet, f"VNet{args.conv_dim}D")
+    elif args.architecture == "vae":
+        args.architecture = getattr(models.vae, f"VAE{args.conv_dim}D")
 
     # DataLoader
     if args.output_type == "combined":
