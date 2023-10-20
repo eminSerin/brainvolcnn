@@ -304,6 +304,23 @@ def default_parser():
         help="Logger to use, default=tensorboard",
     )
 
+    #! The following parameters are experimental.
+    parser.add_argument(
+        "--predict_residual",
+        default=False,
+        help="Predict residualized data, default=False",
+    )
+    parser.add_argument(
+        "--predict_mean",
+        default=False,
+        help="Predict mean data, default=False",
+    )
+    parser.add_argument(
+        "--mean_rest_dir",
+        type=str,
+        help="Path to mean resting-state data",
+    )
+
     args = parser.parse_args()
 
     if args.mask is not None:
@@ -316,6 +333,8 @@ def default_parser():
     args.lr_scheduler = boolean_string(args.lr_scheduler)
     args.run_validation = boolean_string(args.run_validation)
     args.freeze_final_layer = boolean_string(args.freeze_final_layer)
+    args.predict_residual = boolean_string(args.predict_residual)
+    args.predict_mean = boolean_string(args.predict_mean)
 
     args._hparams = {
         "conv_dim": args.conv_dim,
