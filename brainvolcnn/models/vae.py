@@ -343,7 +343,7 @@ class _BaseVAE(BaseModel):
         # )
 
     def reparameterize(self, mu, log_var):
-        std = torch.exp(0.5 * log_var)
+        std = torch.clamp(torch.exp(0.5 * log_var), min=0.1, max=2)
         eps = torch.randn_like(std)
         return mu + eps * std
 
