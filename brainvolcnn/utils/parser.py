@@ -190,7 +190,7 @@ def default_parser():
     parser.add_argument(
         "--loss",
         type=str,
-        choices=["rc", "mse", "mae", "msle", "huber", "rc_v2"],
+        choices=["rc", "mse", "mae", "msle", "huber", "rc_v2", "mse_var"],
         default="mse",
         help="Loss function, default=mse",
     )
@@ -372,6 +372,8 @@ def default_parser():
             mask=args.loss_mask,
             alpha=args.alpha,
         )
+    elif args.loss == "mse_var":
+        args.loss = MSELoss(mask=args.loss_mask)
     elif args.loss == "rc":
         args._hparams["init_within_subj_margin"] = args.init_within_subj_margin
         args._hparams["init_across_subj_margin"] = args.init_across_subj_margin

@@ -50,6 +50,14 @@ def vae_loss(input, target, mu, logvar):
     return recon_loss + kld_loss
 
 
+def mse_logvar_loss(input, target, var_ratio=0.1):
+    """Combine MSE loss and logvar loss."""
+    return (
+        F.mse_loss(input, target) * (1 - var_ratio)
+        - torch.log(torch.var(input, dim=0).sum()) * var_ratio
+    )
+
+
 def rc_loss(input, target, within_margin=0, between_margin=0):
     """Construction Reconstruction Loss (RC Loss) as described in [1].
 
@@ -113,6 +121,21 @@ class VAELoss(BaseLoss):
                 self.mask.apply_mask(input), self.mask.apply_mask(target), mu, logvar
             )
         return self.loss_fn(input, target, mu, logvar)
+
+
+class MSELogVarLoss(BaseLoss):
+    def __init__(self, mask=None, var_ratio=0.1):
+        super().__init__(mask=mask, loss_fn=mse_logvar_loss)
+        self.var_ratio = var_ratio
+
+    def forward(self, input, target):
+        if self.mask is not None:
+            return self.loss_fn(
+                self.mask.apply_mask(input),
+                self.mask.apply_mask(target),
+                self.var_ratio,
+            )
+        return self.loss_fn(input, target, self.var_ratio)
 
 
 class MSELoss(BaseLoss):

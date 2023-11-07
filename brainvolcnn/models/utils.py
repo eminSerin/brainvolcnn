@@ -302,3 +302,23 @@ def xavier_init(model):
         else:
             bound = torch.sqrt(6) / torch.sqrt(param.shape[0] + param.shape[1])
             param.data.uniform_(-bound, bound)
+
+
+def gaussian_noise(tensor, std=0.1):
+    """
+    Add Gaussian noise to a tensor.
+
+    Parameters
+    ----------
+    tensor : torch.Tensor
+        The input tensor.
+    std : float, optional
+        The standard deviation of the Gaussian noise (default is 0.1).
+
+    Returns
+    -------
+    torch.Tensor
+        The tensor with added Gaussian noise.
+
+    """
+    return tensor + torch.randn_like(tensor) * std
